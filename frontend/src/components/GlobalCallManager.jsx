@@ -20,6 +20,70 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { setActiveCall, setIncomingCall, resetCall, toggleMute, toggleCamera } from "@/redux/callSlice";
 
+class RingtoneSynth {
+  constructor() {
+    this.ctx = null;
+    this.isPlaying = false;
+    this.timeout = null;
+    this.osc1 = null;
+    this.osc2 = null;
+    this.gain = null;
+  }
+  
+  play() {
+    if (this.isPlaying) return Promise.resolve();
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.gain = this.ctx.createGain();
+      this.gain.connect(this.ctx.destination);
+      this.gain.gain.value = 0;
+      
+      this.osc1 = this.ctx.createOscillator();
+      this.osc2 = this.ctx.createOscillator();
+      this.osc1.type = 'square';
+      this.osc2.type = 'square';
+      this.osc1.frequency.value = 440;
+      this.osc2.frequency.value = 480;
+      
+      this.osc1.connect(this.gain);
+      this.osc2.connect(this.gain);
+      this.osc1.start();
+      this.osc2.start();
+      
+      this.isPlaying = true;
+      
+      const ring = () => {
+        if (!this.isPlaying) return;
+        const now = this.ctx.currentTime;
+        this.gain.gain.setValueAtTime(0, now);
+        this.gain.gain.linearRampToValueAtTime(0.05, now + 0.05);
+        this.gain.gain.setValueAtTime(0.05, now + 1.5);
+        this.gain.gain.linearRampToValueAtTime(0, now + 1.6);
+        this.timeout = setTimeout(ring, 3000);
+      };
+      ring();
+      return Promise.resolve();
+    } catch(e) {
+      console.warn("AudioContext blocked", e);
+      return Promise.reject(e);
+    }
+  }
+
+  pause() {
+    this.isPlaying = false;
+    clearTimeout(this.timeout);
+    if (this.gain && this.ctx) {
+      this.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+      setTimeout(() => {
+        if (this.osc1) { this.osc1.stop(); this.osc1.disconnect(); }
+        if (this.osc2) { this.osc2.stop(); this.osc2.disconnect(); }
+        if (this.ctx) { this.ctx.close(); }
+        this.ctx = null;
+      }, 200);
+    }
+  }
+}
+
 const GlobalCallManager = () => {
   const dispatch = useDispatch();
   const { incomingCall, callerInfo, activeCall, isMuted, isCameraOff } = useSelector((state) => state.call);
@@ -199,14 +263,12 @@ const GlobalCallManager = () => {
 
     if (shouldRing) {
       if (!ringtoneAudio.current) {
-        ringtoneAudio.current = new Audio("https://actions.google.com/sounds/v1/alarms/phone_ringing.ogg");
-        ringtoneAudio.current.loop = true;
+        ringtoneAudio.current = new RingtoneSynth();
       }
       ringtoneAudio.current.play().catch(e => console.log("Audio autoplay blocked", e));
     } else {
       if (ringtoneAudio.current) {
         ringtoneAudio.current.pause();
-        ringtoneAudio.current.currentTime = 0;
       }
     }
   }, [incomingCall, activeCall, isCallAccepted]);
