@@ -152,12 +152,11 @@ const ChatUser = ({ user, isOnline, onBack }) => {
           <div
             key={idx}
             className={`max-w-[75%] md:max-w-md px-5 py-3 rounded-2xl text-sm font-medium shadow-sm transition-all hover:shadow-md ${
-              msg.senderId._id === loggedInUser._id
+              (msg.senderId?._id || msg.senderId) === loggedInUser?._id
                 ? "bg-indigo-600 text-white self-end rounded-br-none shadow-indigo-100"
                 : "bg-white text-slate-900 self-start rounded-bl-none border border-slate-100 shadow-slate-200/50"
             }`}
           >
-
             {msg.message}
           </div>
         ))}
