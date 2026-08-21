@@ -115,16 +115,14 @@ function App() {
     }
   }, [dispatch]);
 
+  const userId = user?._id;
+
   useEffect(() => {
-    
-
-    if (user) {
+    if (userId) {
       const socketio = io(import.meta.env.VITE_SOCKET_URL, {
-
         query: {
-          userId: user._id
+          userId: userId
         },
-        
       })
       dispatch(setSocket(socketio))
       socketio.on("getOnlineUsers", (onlineUser) => {
@@ -149,19 +147,12 @@ function App() {
         dispatch(resetCall());
       });
 
-
       return () => {
         socketio.disconnect();
         dispatch(setSocket(null))
-
       }
-    } else if (socket) {
-      socket.disconnect();
-      dispatch(setSocket(null))
-
     }
-
-  }, [user, dispatch])
+  }, [userId, dispatch])
 
   return (
     <>
