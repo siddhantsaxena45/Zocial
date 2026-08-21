@@ -182,7 +182,7 @@ const GlobalCallManager = () => {
     const handleInitiateCall = () => startCall();
     window.addEventListener("initiate-video-call", handleInitiateCall);
     return () => window.removeEventListener("initiate-video-call", handleInitiateCall);
-  }, [selectedUser]);
+  }, [selectedUser, socket, activeCall, loading, loggedInUser]);
 
   return (
     <>
