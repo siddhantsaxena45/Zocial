@@ -28,12 +28,14 @@ const GlobalCallManager = () => {
 
   const [facingMode, setFacingMode] = useState("user");
   const [loading, setLoading] = useState(false);
+  const [isCallAccepted, setIsCallAccepted] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
   const localStream = useRef(null);
   const iceCandidatesBuffer = useRef([]);
+  const ringtoneAudio = useRef(null);
 
   const iceServers = {
     iceServers: [
@@ -63,6 +65,7 @@ const GlobalCallManager = () => {
 
     dispatch(resetCall());
     iceCandidatesBuffer.current = [];
+    setIsCallAccepted(false);
   };
 
   const startCall = async () => {
@@ -129,6 +132,7 @@ const GlobalCallManager = () => {
       socket.emit("video-answer", { to: from, answer });
 
       peerConnection.current = pc;
+      setIsCallAccepted(true);
     } catch (err) {
       console.error("Error accepting call:", err);
       endCall(false);
@@ -161,6 +165,11 @@ const GlobalCallManager = () => {
     const handleVideoAnswer = async ({ answer }) => {
       if (!peerConnection.current) return;
       await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
+      for (const candidate of iceCandidatesBuffer.current) {
+        await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+      iceCandidatesBuffer.current = [];
+      setIsCallAccepted(true);
     };
     const handleIceCandidate = async ({ candidate }) => {
       if (peerConnection.current?.remoteDescription?.type) {
@@ -176,6 +185,31 @@ const GlobalCallManager = () => {
       socket.off("ice-candidate", handleIceCandidate);
     };
   }, [socket]);
+
+  useEffect(() => {
+    let shouldRing = false;
+
+    if (incomingCall && !activeCall) {
+      // Receiver is getting a call
+      shouldRing = true;
+    } else if (activeCall && !isCallAccepted) {
+      // Caller is waiting for answer
+      shouldRing = true;
+    }
+
+    if (shouldRing) {
+      if (!ringtoneAudio.current) {
+        ringtoneAudio.current = new Audio("https://actions.google.com/sounds/v1/alarms/phone_ringing.ogg");
+        ringtoneAudio.current.loop = true;
+      }
+      ringtoneAudio.current.play().catch(e => console.log("Audio autoplay blocked", e));
+    } else {
+      if (ringtoneAudio.current) {
+        ringtoneAudio.current.pause();
+        ringtoneAudio.current.currentTime = 0;
+      }
+    }
+  }, [incomingCall, activeCall, isCallAccepted]);
 
   // Listen for the "Start Call" command from the UI
   useEffect(() => {
