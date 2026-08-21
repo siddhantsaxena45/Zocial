@@ -68,6 +68,11 @@ const ChatUser = ({ user, isOnline, onBack }) => {
     }
   };
 
+  const isMutualConnection = user.isMutual || (
+    (loggedInUser?.following || []).some(id => String(id?._id || id) === String(user._id)) &&
+    (loggedInUser?.followers || []).some(id => String(id?._id || id) === String(user._id))
+  );
+
   return (
     <div className="w-full h-full bg-slate-50/50 flex flex-col overflow-hidden">
 
@@ -104,14 +109,14 @@ const ChatUser = ({ user, isOnline, onBack }) => {
                 >
                 {isOnline ? "ONLINE" : "OFFLINE"}
                 </span>
-                {!user.isMutual && (
+                {!isMutualConnection && (
                     <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">IDENTITY REQUEST</span>
                 )}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-5">
-            {user.isMutual ? (
+            {isMutualConnection ? (
                 <>
                 <Link to={`/resume/${user._id}`} className="group relative">
                     <FileText className="w-7 h-7 text-indigo-600 hover:text-indigo-800 cursor-pointer transition-all hover:scale-110 active:scale-90" />
@@ -160,7 +165,7 @@ const ChatUser = ({ user, isOnline, onBack }) => {
 
       {/* Input / Reply Rule */}
       <div className="p-4 md:p-6 bg-white/80 backdrop-blur-2xl border-t border-slate-100 flex flex-col gap-4 shadow-[0_-10px_25px_rgba(0,0,0,0.02)]">
-        {user.isMutual ? (
+        {isMutualConnection ? (
             <div className="flex gap-4 items-center w-full">
                 <div className="flex-1 relative group">
                     <input
