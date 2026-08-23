@@ -89,7 +89,7 @@ const ChatPage = () => {
       )}
 
       {/* 👈 Left Sidebar (Always visible) */}
-      <div className="w-full md:w-80 border-r border-slate-200 bg-white/40 backdrop-blur-3xl shadow-sm flex flex-col">
+      <div className="w-full md:w-80 flex-shrink-0 border-r border-slate-200 bg-white/40 backdrop-blur-3xl shadow-sm flex flex-col">
         <h1 className="text-lg font-black px-6 py-6 border-b border-slate-100 text-slate-900 uppercase text-[10px] tracking-[0.2em] opacity-60">Intelligence Hub</h1>
 
 
@@ -124,7 +124,7 @@ const ChatPage = () => {
                     dispatch({ type: "messageNotification/setAllMessages", payload: updatedMessages });
                   }
                   }
-                  className={`flex items-center gap-4 px-6 py-4 cursor-pointer transition-all hover:bg-indigo-50/50 ${selectedUser?._id === u._id ? 'bg-indigo-50/80 border-r-4 border-indigo-600' : ''
+                  className={`flex items-center gap-4 px-4 py-3 mx-3 my-1.5 cursor-pointer transition-all rounded-2xl hover:bg-indigo-50/80 ${selectedUser?._id === u._id ? 'bg-indigo-100/80 shadow-sm ring-1 ring-indigo-200' : ''
                     }`}
 
                 >
