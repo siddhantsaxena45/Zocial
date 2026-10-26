@@ -285,30 +285,6 @@ const EditProfile = () => {
                                 </div>
                             </div>
 
-                            {/* Open to Opportunities Switch */}
-                            <div className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
-                                <div className="space-y-0.5">
-                                    <div className="flex items-center gap-2">
-                                        <span className="relative flex h-2.5 w-2.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                                        </span>
-                                        <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                                            Open to Opportunities / Gigs
-                                        </label>
-                                    </div>
-                                    <p className="text-[11px] text-slate-500">
-                                        Display an active "Open to Work / Collaborations" radar badge on your profile card.
-                                    </p>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    checked={inputData.openToOpportunities}
-                                    onChange={(e) => setInputData({ ...inputData, openToOpportunities: e.target.checked })}
-                                    className="h-5 w-5 accent-emerald-600 rounded cursor-pointer"
-                                />
-                            </div>
-
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">

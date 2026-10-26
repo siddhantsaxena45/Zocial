@@ -280,11 +280,6 @@ const ZocialScout = () => {
                               {candidate.username?.startsWith('@') ? candidate.username : `@${candidate.username}`}
                             </span>
                           </Link>
-                          {candidate.openToOpportunities && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 font-bold text-[9px] uppercase tracking-wider">
-                              Open to Gigs
-                            </span>
-                          )}
                         </div>
                         <p className="text-xs font-bold text-indigo-700">
                           {candidate.targetRole}
