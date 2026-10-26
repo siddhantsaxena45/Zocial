@@ -253,14 +253,7 @@ const BountyHub = () => {
                   {/* Footer & CTA */}
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      {bounty.author?.openToOpportunities ? (
-                        <span className="text-emerald-600 flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                          Available Now
-                        </span>
-                      ) : (
-                        "Verified Creator"
-                      )}
+                      Verified Creator
                     </div>
 
                     <Button
