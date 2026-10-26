@@ -15,7 +15,7 @@ const MainLayout = () => {
     <div className="flex flex-col lg:flex-row min-h-screen print:block">
       <LeftSidebar />
       <main className="flex-1 lg:ml-72 transition-all duration-300 min-h-screen print:m-0 print:p-0">
-        <div className="pt-24 lg:pt-0 pb-24 lg:pb-12 px-3 sm:px-4 lg:px-8 max-w-7xl mx-auto print:p-0 print:m-0 print:max-w-none">
+        <div className="pt-20 lg:pt-6 pb-20 lg:pb-6 px-3 sm:px-4 lg:px-8 max-w-7xl mx-auto print:p-0 print:m-0 print:max-w-none">
           <Outlet />
         </div>
       </main>

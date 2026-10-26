@@ -131,7 +131,7 @@ const ChatUser = ({ user, isOnline, onBack }) => {
     <div className="w-full h-full bg-slate-50/50 flex flex-col overflow-hidden">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white/60 backdrop-blur-xl border-b border-white/20 shadow-sm z-10">
+      <div className="h-16 px-6 bg-white/70 backdrop-blur-xl border-b border-purple-100/60 flex items-center justify-between shrink-0 z-10">
 
         <div className="flex items-center gap-3">
           {onBack && (
@@ -196,42 +196,55 @@ const ChatUser = ({ user, isOnline, onBack }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 flex flex-col gap-3">
-        {messages?.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`max-w-[80%] md:max-w-md px-4 py-2.5 rounded-2xl text-sm font-medium shadow-sm transition-all hover:shadow-md ${
-              (msg.senderId?._id || msg.senderId) === loggedInUser?._id
-                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white self-end rounded-br-none shadow-purple-200"
-                : "bg-white text-slate-900 self-start rounded-bl-none border border-purple-50 shadow-slate-200/50"
-            }`}
-          >
-            {msg.message}
-          </div>
-        ))}
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-5 flex flex-col gap-3.5">
+        {messages?.map((msg, idx) => {
+          const isMe = (msg.senderId?._id || msg.senderId) === loggedInUser?._id;
+          return (
+            <div
+              key={idx}
+              className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+            >
+              <div
+                className={`max-w-[85%] md:max-w-md px-4.5 py-2.5 rounded-2xl text-sm font-medium shadow-xs transition-all leading-relaxed ${
+                  isMe
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-br-xs shadow-purple-500/10"
+                    : "bg-white text-slate-900 rounded-bl-xs border border-slate-200/70 shadow-slate-200/40"
+                }`}
+              >
+                {msg.message}
+              </div>
+              {msg.createdAt && (
+                <span className="text-[10px] text-slate-400 px-1 mt-1 font-semibold">
+                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Input / Reply Bar */}
-      <div className="p-3 md:p-5 bg-white/90 backdrop-blur-2xl border-t border-purple-100/60 flex flex-col gap-2.5 shadow-[0_-10px_25px_rgba(0,0,0,0.03)] shrink-0">
+      <div className="p-4 md:p-5 bg-white/95 backdrop-blur-2xl border-t border-purple-100/70 flex flex-col gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.02)] shrink-0">
         {!isMutualConnection && (
           isLimitReached ? (
-            <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 rounded-2xl border border-purple-200/80 text-xs text-purple-950 shadow-sm flex-wrap gap-2">
-              <div className="flex items-center gap-2 font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+            <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-50/90 border border-amber-200/70 text-xs text-amber-950 gap-2 flex-wrap">
+              <div className="flex items-center gap-2 font-medium text-xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse"></span>
                 <span>
                   You can send only one message if not connected. Wait for <strong>@{user?.username}</strong>'s reply or connect to chat freely.
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {synergyStatus === "pending" ? (
-                  <span className="px-3 py-1 bg-white border border-purple-200 text-purple-600 font-bold text-xs rounded-xl shadow-xs">
+                  <span className="px-2.5 py-1 bg-white border border-amber-200 text-amber-700 font-bold text-[11px] rounded-lg shadow-2xs">
                     Synergy Request Pending
                   </span>
                 ) : (
                   <button
+                    type="button"
                     onClick={handleSendSynergy}
                     disabled={connecting}
-                    className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-purple-600/20 active:scale-95 transition-all flex items-center gap-1.5"
+                    className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-[11px] rounded-lg shadow-sm active:scale-95 transition-all flex items-center gap-1.5"
                   >
                     <Users className="w-3.5 h-3.5" />
                     {connecting ? "Sending..." : `Connect with @${user?.username}`}
@@ -239,25 +252,26 @@ const ChatUser = ({ user, isOnline, onBack }) => {
                 )}
                 <Link
                   to={`/profile/${user?._id}`}
-                  className="px-2.5 py-1 text-slate-500 hover:text-purple-600 font-semibold text-xs transition-colors underline"
+                  className="px-2 py-1 text-slate-500 hover:text-purple-600 font-semibold text-[11px] transition-colors underline"
                 >
                   View Profile
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between px-3.5 py-1.5 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 rounded-xl border border-indigo-100 text-xs text-indigo-900 shadow-sm flex-wrap gap-2">
+            <div className="flex items-center justify-between px-3.5 py-1.5 bg-indigo-50/80 rounded-xl border border-indigo-100 text-xs text-indigo-900 flex-wrap gap-2">
               <div className="flex items-center gap-2 font-medium text-[11px]">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Direct Collaboration • 1 introductory message allowed before connecting</span>
               </div>
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-xs shrink-0">
                 {synergyStatus === "pending" ? (
-                  <span className="font-bold text-indigo-500 bg-white/80 px-2 py-0.5 rounded-lg border border-indigo-100 text-[10px]">
+                  <span className="font-bold text-indigo-600 bg-white px-2 py-0.5 rounded-lg border border-indigo-100 text-[10px]">
                     Synergy Pending
                   </span>
                 ) : (
                   <button
+                    type="button"
                     onClick={handleSendSynergy}
                     disabled={connecting}
                     className="font-bold text-indigo-600 hover:text-indigo-800 underline flex items-center gap-1 text-[11px]"
@@ -270,7 +284,7 @@ const ChatUser = ({ user, isOnline, onBack }) => {
           )
         )}
 
-        <div className="flex gap-2 sm:gap-4 items-center w-full">
+        <div className="flex gap-3 items-center w-full">
             <div className="flex-1 relative group">
                 <input
                 type="text"
@@ -283,10 +297,10 @@ const ChatUser = ({ user, isOnline, onBack }) => {
                     ? `Waiting for @${user?.username} to reply or connect...`
                     : "Type a professional message..."
                 }
-                className={`w-full pl-4 sm:pl-6 pr-10 sm:pr-12 py-3 rounded-2xl outline-none text-sm transition-all font-medium ${
+                className={`w-full px-4 sm:px-5 py-3 rounded-2xl outline-none text-sm transition-all font-medium ${
                   isLimitReached
                     ? 'bg-slate-100/80 text-slate-400 cursor-not-allowed border border-slate-200 placeholder:text-slate-400'
-                    : 'bg-slate-100/60 hover:bg-slate-100 focus:bg-white border-2 border-transparent focus:border-purple-200 placeholder:text-slate-400 group-hover:shadow-inner'
+                    : 'bg-slate-100/70 hover:bg-slate-100 focus:bg-white border-2 border-transparent focus:border-indigo-300 placeholder:text-slate-400'
                 }`}
                 />
             </div>
@@ -296,15 +310,16 @@ const ChatUser = ({ user, isOnline, onBack }) => {
             </div>
             ) : (
             <button
+                type="button"
                 onClick={sendMessage}
                 disabled={!text.trim() || isLimitReached}
-                className={`h-11 w-11 flex items-center justify-center rounded-2xl transition-all duration-300 shrink-0 ${
+                className={`h-11 w-11 flex items-center justify-center rounded-2xl transition-all shrink-0 ${
                     text.trim() && !isLimitReached
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20 hover:from-purple-700 hover:to-indigo-700 active:scale-95 cursor-pointer' 
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20 hover:from-purple-700 hover:to-indigo-700 active:scale-95 cursor-pointer' 
                     : 'bg-slate-100 text-slate-300 cursor-not-allowed'
                 }`}
             >
-                <span className="text-lg -rotate-45 translate-x-0.5 -translate-y-0.5">➤</span>
+                <span className="text-base -rotate-45 translate-x-0.5 -translate-y-0.5">➤</span>
             </button>
             )}
         </div>

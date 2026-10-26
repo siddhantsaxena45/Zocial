@@ -95,11 +95,13 @@ const ChatPage = () => {
 
 
   return (
-    <div className="flex h-[calc(100dvh-13.5rem)] lg:h-[calc(100dvh-4rem)] w-full overflow-hidden relative glass-card backdrop-blur-3xl bg-white/85 border border-purple-100/70 shadow-xl shadow-purple-900/5 rounded-2xl">
+    <div className="flex h-[calc(100dvh-11rem)] lg:h-[calc(100dvh-6rem)] w-full overflow-hidden relative glass-card backdrop-blur-3xl bg-white/95 border border-purple-100/80 shadow-xl shadow-indigo-950/5 rounded-3xl">
 
       {/* 👈 Left Sidebar (Contacts List) */}
-      <div className={`${selectedUser ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-shrink-0 border-r border-purple-100/60 bg-white/50 backdrop-blur-3xl shadow-sm flex-col h-full`}>
-        <h1 className="text-lg font-black px-6 py-6 border-b border-purple-100/50 text-slate-900 uppercase text-[10px] tracking-[0.2em] opacity-60">Intelligence Hub</h1>
+      <div className={`${selectedUser ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-shrink-0 border-r border-purple-100/60 bg-white/60 backdrop-blur-3xl shadow-xs flex-col h-full`}>
+        <div className="h-16 px-6 border-b border-purple-100/60 flex items-center shrink-0">
+          <h1 className="text-xs font-black uppercase tracking-[0.2em] text-slate-600">Intelligence Hub</h1>
+        </div>
 
         <div className="overflow-y-auto flex-1 h-full font-mono bg-slate-50/20">
           {sortedUsers.length === 0 ? (
