@@ -163,7 +163,8 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                     )}
                   </div>
                 </div>
-              ))
+              );
+            })
           )}
         </div>
       </PopoverContent>
