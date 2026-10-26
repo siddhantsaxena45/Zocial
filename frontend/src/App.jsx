@@ -51,12 +51,12 @@ const browserRouter = createBrowserRouter([
       {
         path: "/scout",
         element:  <ZocialScout />
+      },
+      {
+        path: "/resume/:id",
+        element:  <ResumeGenerator />
       }
     ]
-  },
-  {
-    path: "/resume/:id",
-    element: <ProtectedRoutes><ResumeGenerator /></ProtectedRoutes>,
   },
   {
     path: "/signup",

@@ -6,13 +6,12 @@ import { setUserProfile } from '@/redux/authSlice';
 import { Button } from './ui/button';
 import { 
     ArrowLeft, Download, Mail, Briefcase, Award, Zap, 
-    LayoutDashboard, Sparkles, Loader2, RefreshCw, Layers, Target, Github, Globe,
+    LayoutDashboard, Sparkles, Loader2, RefreshCw, Layers, Github, Globe,
     Eye, ShieldCheck 
 } from 'lucide-react';
 import useAxiosInterceptor from '@/hooks/useAxiosInterceptor';
 import axios from 'axios';
 import { toast } from 'sonner';
-import JobFitModal from './JobFitModal';
 
 const ResumeGenerator = () => {
     useAxiosInterceptor();
@@ -25,7 +24,6 @@ const ResumeGenerator = () => {
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [resumeData, setResumeData] = useState(null);
-    const [jobFitOpen, setJobFitOpen] = useState(false);
 
     // Sync resumeData when userProfile changes
     useEffect(() => {
@@ -93,34 +91,24 @@ const ResumeGenerator = () => {
     const engineModel = resumeData?.model || "gemini-2.5-flash";
 
     return (
-        <div className="min-h-screen bg-transparent py-8 print:bg-white print:py-0">
+        <div className="w-full bg-transparent py-2 sm:py-6 print:bg-white print:py-0">
             {/* Top Bar - Hidden in Print */}
-            <div className="max-w-4xl mx-auto mb-6 flex flex-wrap justify-between items-center gap-4 px-4 print:hidden">
+            <div className="w-full max-w-4xl mx-auto mb-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 print:hidden">
                 <Button 
                     variant="outline" 
                     onClick={() => navigate(-1)} 
-                    className="gap-2 rounded-xl border-white shadow-sm hover:bg-white bg-white/70 backdrop-blur-md text-xs font-bold text-slate-700"
+                    className="gap-2 rounded-xl border-purple-100/80 shadow-xs hover:bg-white bg-white/80 backdrop-blur-md text-xs font-bold text-slate-700 w-fit"
                 >
                     <ArrowLeft className="h-4 w-4" /> Back to Network
                 </Button>
 
-                <div className="flex items-center gap-3">
-                    {/* AI Job-Fit Scanner Button */}
-                    <Button 
-                        variant="outline"
-                        onClick={() => setJobFitOpen(true)} 
-                        className="gap-2 bg-white/90 hover:bg-white text-indigo-700 border-indigo-200 text-xs font-bold rounded-xl shadow-sm transition-all"
-                    >
-                        <Target className="h-4 w-4 text-indigo-600" />
-                        <span>AI Job-Fit Scanner</span>
-                    </Button>
-
+                <div className="flex items-center gap-2.5 flex-wrap">
                     {/* Gemini AI Action Button - ONLY VISIBLE TO RESUME OWNER */}
                     {isOwner && (
                         <Button 
                             onClick={handleGenerateResume} 
                             disabled={isGenerating}
-                            className="gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-md transition-all text-xs font-bold"
+                            className="gap-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-md shadow-purple-500/20 transition-all text-xs font-bold"
                         >
                             {isGenerating ? (
                                 <>
@@ -146,35 +134,18 @@ const ResumeGenerator = () => {
                 </div>
             </div>
 
-            {/* Informative Status Banner if no resume yet */}
-            {!resumeData && (
-                <div className="max-w-4xl mx-auto mb-4 px-4 print:hidden">
-                    {isOwner ? (
-                        <div className="p-4 rounded-2xl bg-indigo-50/90 border border-indigo-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-indigo-900 text-xs font-medium shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <Sparkles className="h-5 w-5 text-indigo-600 shrink-0" />
-                                <span>Generate your official AI-verified ATS resume using Gemini 2.5 Flash analysis of your transmissions and visual proof-of-work.</span>
-                            </div>
-                            <Button 
-                                onClick={handleGenerateResume} 
-                                disabled={isGenerating}
-                                size="sm"
-                                className="btn-purple text-xs shrink-0 rounded-xl"
-                            >
-                                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate Now"}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="p-4 rounded-2xl bg-purple-50/90 border border-purple-200/80 flex items-center gap-3 text-purple-900 text-xs font-medium shadow-sm">
-                            <ShieldCheck className="h-5 w-5 text-purple-600 shrink-0" />
-                            <span>Viewing public portfolio profile for <strong>@{userProfile.username}</strong>. Only the account owner can build or update their AI resume.</span>
-                        </div>
-                    )}
+            {/* Public profile notice for visitors when owner has not generated full resume yet */}
+            {!resumeData && !isOwner && (
+                <div className="w-full max-w-4xl mx-auto mb-4 print:hidden">
+                    <div className="p-3.5 rounded-2xl bg-purple-50/90 border border-purple-200/80 flex items-center gap-3 text-purple-900 text-xs font-medium shadow-xs">
+                        <ShieldCheck className="h-5 w-5 text-purple-600 shrink-0" />
+                        <span>Viewing public portfolio profile for <strong>@{userProfile.username}</strong>. Only the account owner can build or update their AI resume.</span>
+                    </div>
                 </div>
             )}
 
             {/* A4 Paper Canvas */}
-            <div className="max-w-4xl mx-auto bg-white shadow-2xl print:shadow-none min-h-[1056px] p-8 sm:p-16 relative overflow-hidden rounded-2xl print:rounded-none">
+            <div className="w-full max-w-4xl mx-auto bg-white shadow-2xl print:shadow-none min-h-[1056px] p-5 sm:p-10 md:p-16 relative overflow-hidden rounded-3xl print:rounded-none border border-purple-100/60 print:border-none">
                 
                 {/* Background Decor */}
                 <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
@@ -436,9 +407,6 @@ const ResumeGenerator = () => {
                     }
                 }
             `}</style>
-
-            {/* AI Job-Fit Scanner Modal */}
-            <JobFitModal open={jobFitOpen} setOpen={setJobFitOpen} />
         </div>
     );
 };

@@ -11,7 +11,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setSelectedUser } from "@/redux/authSlice";
 import { toast } from "sonner";
-import JobFitModal from "./JobFitModal";
 
 const ZocialScout = () => {
   const [candidates, setCandidates] = useState([]);
@@ -20,8 +19,6 @@ const ZocialScout = () => {
   const [skillsQuery, setSkillsQuery] = useState("");
   const [roleQuery, setRoleQuery] = useState("");
   const [openOnly, setOpenOnly] = useState(false);
-  const [selectedCandidateForFit, setSelectedCandidateForFit] = useState(null);
-  const [jobFitOpen, setJobFitOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 

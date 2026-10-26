@@ -62,9 +62,9 @@ const LeftSidebar = () => {
   const sidebar = [
     { icon: <Home />, text: 'Home' },
     { icon: <Search />, text: 'Search' },
-    { icon: <Compass />, text: 'Zocial Scout', badge: 'SCOUT' },
+    { icon: <Compass />, text: 'Zocial Scout' },
     { icon: <Briefcase />, text: 'Bounties' },
-    { icon: <Sparkles className="text-indigo-600" />, text: 'AI Job-Fit', badge: 'AI' },
+    { icon: <Sparkles className="text-indigo-600" />, text: 'AI Job-Fit' },
     { icon: <Bell />, text: 'Notifications' },
     { icon: <Users />, text: 'Synergy' },
     { icon: <MessageCircle />, text: 'Messages' },
@@ -137,7 +137,7 @@ const LeftSidebar = () => {
   return (
     <>
       {/* Desktop Sidebar (left vertical) */}
-      <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:left-0 bg-white/50 backdrop-blur-3xl border-r border-purple-100/40 px-4 py-5 z-20 overflow-y-auto overflow-x-hidden">
+      <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:left-0 bg-white/50 backdrop-blur-3xl border-r border-purple-100/40 px-4 py-5 z-20 overflow-y-auto overflow-x-hidden print:hidden">
 
         <div className="shrink-0 mb-4 px-3">
           <h1 onClick={() => navigate("/")} className='text-3xl font-black text-gradient tracking-tighter cursor-pointer'>
@@ -207,7 +207,7 @@ const LeftSidebar = () => {
       </div>
 
       {/* Mobile Top Navigation & Quick Feature Pills */}
-      <div className='lg:hidden fixed top-0 left-0 right-0 z-50 glass backdrop-blur-xl border-b border-purple-100/50 shadow-sm'>
+      <div className='lg:hidden fixed top-0 left-0 right-0 z-50 glass backdrop-blur-xl border-b border-purple-100/50 shadow-sm print:hidden'>
         {/* Top Header Row */}
         <div className="flex justify-between items-center px-4 py-2.5">
           <h1 onClick={() => navigate("/")} className='text-2xl font-black text-gradient tracking-tighter cursor-pointer'>
@@ -288,7 +288,7 @@ const LeftSidebar = () => {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-16 bg-white/95 backdrop-blur-2xl border-t border-purple-100/60 flex items-center justify-around px-3 shadow-[0_-10px_25px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-16 bg-white/95 backdrop-blur-2xl border-t border-purple-100/60 flex items-center justify-around px-3 shadow-[0_-10px_25px_rgba(0,0,0,0.05)] print:hidden">
         {/* Home */}
         <button
           onClick={() => navigate("/")}
