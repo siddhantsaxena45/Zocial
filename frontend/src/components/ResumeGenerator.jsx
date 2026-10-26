@@ -67,8 +67,8 @@ const ResumeGenerator = () => {
 
     if (!userProfile) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <div className="min-h-screen flex flex-col items-center justify-center bg-transparent gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
                 <p className="text-sm font-semibold text-slate-500">Loading Professional Profile...</p>
             </div>
         );
@@ -86,7 +86,7 @@ const ResumeGenerator = () => {
     const engineModel = resumeData?.model || "gemini-2.5-flash";
 
     return (
-        <div className="min-h-screen bg-slate-100 py-10 print:bg-white print:py-0">
+        <div className="min-h-screen bg-transparent py-8 print:bg-white print:py-0">
             {/* Top Bar - Hidden in Print */}
             <div className="max-w-4xl mx-auto mb-6 flex flex-wrap justify-between items-center gap-4 px-4 print:hidden">
                 <Button 

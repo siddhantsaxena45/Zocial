@@ -24,6 +24,26 @@ const ChatPage = () => {
         });
         if (res.data.success) {
           setChatUsers(res.data.users);
+          
+          // Check if there is an active navigation target from BountyHub or Scout
+          const targetUserStr = localStorage.getItem("zocial_chat_target");
+          if (targetUserStr) {
+            try {
+              const targetUser = JSON.parse(targetUserStr);
+              if (targetUser && targetUser._id) {
+                dispatch(setSelectedUser(targetUser));
+                setChatUsers((prev) => {
+                  if (!prev.some((u) => u._id === targetUser._id)) {
+                    return [targetUser, ...prev];
+                  }
+                  return prev;
+                });
+              }
+            } catch (e) {
+              console.error(e);
+            }
+            localStorage.removeItem("zocial_chat_target");
+          }
         }
       } catch (error) {
         console.log(error);
@@ -32,7 +52,7 @@ const ChatPage = () => {
       }
     };
     fetchChatUsers();
-  }, []);
+  }, [dispatch]);
 
   const unseenCounts = {};
 
@@ -68,18 +88,18 @@ const ChatPage = () => {
   });
 
   if (isLoadingUsers) return (
-    <div className="flex items-center justify-center h-screen bg-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+    <div className="flex items-center justify-center h-screen bg-transparent">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
     </div>
   );
 
 
   return (
-    <div className="flex h-[calc(100dvh-13rem)] lg:h-[calc(100dvh-3rem)] w-full overflow-hidden relative bg-white border border-slate-200 shadow-sm rounded-2xl">
+    <div className="flex h-[calc(100dvh-13rem)] lg:h-[calc(100dvh-3rem)] w-full overflow-hidden relative glass-card backdrop-blur-3xl bg-white/85 border border-purple-100/70 shadow-xl shadow-purple-900/5 rounded-2xl">
 
       {/* 📱 Mobile Full-Screen Chat */}
       {selectedUser && (
-        <div className="md:hidden fixed inset-0 h-[100dvh] z-[100] bg-purple-100">
+        <div className="md:hidden fixed inset-0 h-[100dvh] z-[100] bg-white">
           <ChatUser 
             user={selectedUser} 
             isOnline={onlineUsers.includes(selectedUser._id.toString())} 
@@ -89,8 +109,8 @@ const ChatPage = () => {
       )}
 
       {/* 👈 Left Sidebar (Always visible) */}
-      <div className="w-full md:w-80 flex-shrink-0 border-r border-slate-200 bg-white/40 backdrop-blur-3xl shadow-sm flex flex-col">
-        <h1 className="text-lg font-black px-6 py-6 border-b border-slate-100 text-slate-900 uppercase text-[10px] tracking-[0.2em] opacity-60">Intelligence Hub</h1>
+      <div className="w-full md:w-80 flex-shrink-0 border-r border-purple-100/60 bg-white/50 backdrop-blur-3xl shadow-sm flex flex-col">
+        <h1 className="text-lg font-black px-6 py-6 border-b border-purple-100/50 text-slate-900 uppercase text-[10px] tracking-[0.2em] opacity-60">Intelligence Hub</h1>
 
 
         <div className="overflow-y-auto flex-1 h-full font-mono bg-slate-50/20">

@@ -205,92 +205,154 @@ const LeftSidebar = () => {
         </div>
       </div>
 
-      {/* Mobile top logo & handy quick action chips */}
-      <div className='lg:hidden fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 py-3 glass backdrop-blur-xl border-b border-purple-100/50 shadow-sm'>
-        <h1 onClick={() => navigate("/")} className='text-2xl font-black text-gradient tracking-tighter cursor-pointer shrink-0'>
-          Zocial
-        </h1>
-        <div className="flex gap-1.5 items-center">
+      {/* Mobile Top Navigation & Quick Feature Pills */}
+      <div className='lg:hidden fixed top-0 left-0 right-0 z-50 glass backdrop-blur-xl border-b border-purple-100/50 shadow-sm'>
+        {/* Top Header Row */}
+        <div className="flex justify-between items-center px-4 py-2.5">
+          <h1 onClick={() => navigate("/")} className='text-2xl font-black text-gradient tracking-tighter cursor-pointer'>
+            Zocial
+          </h1>
+          <div className="flex items-center gap-1.5">
             <button 
-              onClick={() => navigate("/scout")} 
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black transition-all shadow-sm ${
-                location.pathname === "/scout" 
-                  ? "bg-purple-600 text-white shadow-purple-500/20" 
-                  : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200/60"
-              }`}
+              onClick={() => setSearchOpen(true)} 
+              className="p-2 text-slate-600 hover:text-purple-600 rounded-xl hover:bg-purple-50 transition-colors"
+              title="Search Builders"
             >
-              <Compass className="h-3 w-3" /> Scout
+              <Search className="h-5 w-5" />
             </button>
+            <NotificationPopover likeNotification={bellNotifications}>
+              <button className="relative p-2 text-slate-600 hover:text-purple-600 rounded-xl hover:bg-purple-50 transition-colors">
+                <Bell className="h-5 w-5" />
+                {unseenNotificationsCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-purple-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-sm">
+                    {unseenNotificationsCount}
+                  </span>
+                )}
+              </button>
+            </NotificationPopover>
             <button 
-              onClick={() => navigate("/bounties")} 
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black transition-all shadow-sm ${
-                location.pathname === "/bounties" 
-                  ? "bg-emerald-600 text-white shadow-emerald-500/20" 
-                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60"
-              }`}
+              onClick={logoutHandler} 
+              className="p-2 text-slate-600 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition-colors"
+              title="Logout"
             >
-              <Briefcase className="h-3 w-3" /> Bounties
+              <LogOut className="h-5 w-5" />
             </button>
-            <button 
-              onClick={() => setJobFitOpen(true)} 
-              className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[11px] font-black shadow-sm active:scale-95 transition-all"
-            >
-              <Sparkles className="h-3 w-3 text-amber-300" /> AI Fit
-            </button>
-            <button onClick={() => setSearchOpen(true)} className="p-1.5 text-slate-600 hover:text-purple-600 transition-colors">
-              <Search className="h-4 w-4" />
-            </button>
-            <button onClick={logoutHandler} className="p-1.5 text-slate-600 hover:text-rose-500 transition-colors">
-              <LogOut className="h-4 w-4" />
-            </button>
+          </div>
+        </div>
+
+        {/* Feature Pills Horizontal Scrollbar */}
+        <div className="flex items-center gap-2 px-3 py-1.5 overflow-x-auto no-scrollbar border-t border-purple-100/40 bg-white/40">
+          <button 
+            onClick={() => navigate("/scout")} 
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all shadow-sm ${
+              location.pathname === "/scout" 
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-purple-500/25" 
+                : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200/60"
+            }`}
+          >
+            <Compass className="h-3.5 w-3.5" /> Scout Engine
+          </button>
+          <button 
+            onClick={() => navigate("/bounties")} 
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all shadow-sm ${
+              location.pathname === "/bounties" 
+                ? "bg-emerald-600 text-white shadow-emerald-500/25" 
+                : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60"
+            }`}
+          >
+            <Briefcase className="h-3.5 w-3.5" /> Bounties & Gigs
+          </button>
+          <button 
+            onClick={() => setJobFitOpen(true)} 
+            className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white text-xs font-black shrink-0 shadow-sm active:scale-95 transition-all"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-amber-300" /> AI Job-Fit
+          </button>
+          <button 
+            onClick={() => { dispatch(markSynergyNotificationsSeen()); setSynergyOpen(true); }} 
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all shadow-sm ${
+              unseenSynergyCount > 0 
+                ? "bg-amber-100 text-amber-900 border border-amber-300" 
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" /> Synergy
+            {unseenSynergyCount > 0 && (
+              <span className="bg-amber-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">
+                {unseenSynergyCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-16 bg-white/95 backdrop-blur-2xl border-t border-purple-100/60 flex items-center justify-around px-3 shadow-[0_-10px_25px_rgba(0,0,0,0.05)]">
+        {/* Home */}
+        <button
+          onClick={() => navigate("/")}
+          className={`flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all ${
+            location.pathname === "/" ? "text-purple-600 font-black" : "text-slate-500 hover:text-purple-600"
+          }`}
+        >
+          <Home className="h-5 w-5" />
+          <span className="text-[9px] font-bold mt-0.5">Home</span>
+        </button>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-6 left-6 right-6 z-50 lg:hidden h-16 flex justify-around items-center rounded-2xl glass-card backdrop-blur-2xl px-2 border border-purple-100/60 shadow-xl shadow-purple-900/10">
-        {sidebar.filter(item => ['Home', 'Notifications', 'Synergy', 'Messages', 'Create', 'Profile'].includes(item.text)).map((item, index) => {
-          const active = isItemActive(item.text);
-          const mobileContent = (
-            <div
-              onClick={() => { if (item.text !== "Notifications") sidebarHandler(item.text) }}
-              className={`flex flex-col items-center justify-center relative w-11 h-11 transition-all rounded-xl cursor-pointer ${
-                active
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25"
-                  : "text-slate-500 hover:text-purple-700 hover:bg-purple-50/70"
-              }`}
-            >
-               {item.icon}
-               {item.text === "Notifications" && unseenNotificationsCount > 0 && (
-                 <span className="absolute right-1 top-1 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full z-10">
-                   {unseenNotificationsCount}
-                 </span>
-               )}
+        {/* Messages */}
+        <button
+          onClick={() => navigate("/chat")}
+          className={`relative flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all ${
+            location.pathname === "/chat" ? "text-purple-600 font-black" : "text-slate-500 hover:text-purple-600"
+          }`}
+        >
+          <MessageCircle className="h-5 w-5" />
+          <span className="text-[9px] font-bold mt-0.5">Chat</span>
+          {unseenMessagesCount > 0 && (
+            <span className="absolute top-1 right-2 bg-purple-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full">
+              {unseenMessagesCount}
+            </span>
+          )}
+        </button>
 
-               {item.text === "Synergy" && unseenSynergyCount > 0 && (
-                 <span className="absolute right-1 top-1 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full z-10">
-                   {unseenSynergyCount}
-                 </span>
-               )}
+        {/* Center Prominent Create Button */}
+        <button
+          onClick={() => setOpen(true)}
+          className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 active:scale-95 transition-all -translate-y-2 border-2 border-white"
+          title="Create Transmission"
+        >
+          <PlusSquare className="h-6 w-6" />
+        </button>
 
-               {item.text === "Messages" && unseenMessagesCount > 0 && (
-                 <span className="absolute right-1 top-1 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full z-10">
-                   {unseenMessagesCount}
-                 </span>
-               )}
-            </div>
-          );
+        {/* Synergy Network */}
+        <button
+          onClick={() => { dispatch(markSynergyNotificationsSeen()); setSynergyOpen(true); }}
+          className="relative flex flex-col items-center justify-center w-12 h-12 rounded-xl text-slate-500 hover:text-purple-600 transition-all"
+        >
+          <Users className="h-5 w-5" />
+          <span className="text-[9px] font-bold mt-0.5">Synergy</span>
+          {unseenSynergyCount > 0 && (
+            <span className="absolute top-1 right-2 bg-amber-500 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full">
+              {unseenSynergyCount}
+            </span>
+          )}
+        </button>
 
-           if (item.text === "Notifications") {
-             return (
-               <NotificationPopover key={index} likeNotification={bellNotifications}>
-                 {mobileContent}
-               </NotificationPopover>
-             );
-           }
-
-          return <div key={index}>{mobileContent}</div>;
-        })}
+        {/* Profile */}
+        <button
+          onClick={() => navigate(`/profile/${user?._id}`)}
+          className={`flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all ${
+            location.pathname.startsWith("/profile") ? "text-purple-600 font-black" : "text-slate-500 hover:text-purple-600"
+          }`}
+        >
+          <Avatar className="h-5 w-5 border border-purple-200">
+            <AvatarImage src={user?.profilepicture || "https://github.com/shadcn.png"} />
+            <AvatarFallback className="bg-purple-100 text-purple-700 font-bold text-[9px]">
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-[9px] font-bold mt-0.5">Profile</span>
+        </button>
       </div>
       <CreatePost open={open} setOpen={setOpen} />
       <SearchDialog open={searchOpen} setOpen={setSearchOpen} />
