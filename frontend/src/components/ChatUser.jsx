@@ -125,12 +125,6 @@ const ChatUser = ({ user, isOnline, onBack }) => {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:gap-4">
-            <Link to={`/resume/${user._id}`} className="group relative">
-                <FileText className="w-6 h-6 text-indigo-600 hover:text-indigo-800 cursor-pointer transition-all hover:scale-110 active:scale-90" />
-                <div className="absolute top-8 right-0 bg-slate-800 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                    View Resume
-                </div>
-            </Link>
             <div className="group relative">
                 <VideoIcon 
                     onClick={() => {

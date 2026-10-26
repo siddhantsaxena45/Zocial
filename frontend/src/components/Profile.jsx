@@ -5,7 +5,7 @@ import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { setAuthUser, updateUserProfile } from '@/redux/authSlice';
-import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark, Briefcase, DollarSign, Github, Globe } from "lucide-react";
+import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark, Briefcase, DollarSign, Github, Globe, FileText } from "lucide-react";
 import { toast } from 'sonner';
 import axios from "axios";
 import NetworkListDialog from './NetworkListDialog';
@@ -308,22 +308,30 @@ const Profile = () => {
                                                 {connectionStatus === "accepted" && (
                                                     <Button
                                                         onClick={() => navigate("/chat")}
-                                                        className="font-black uppercase tracking-widest text-[10px] px-6 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all shadow-md"
+                                                        className="font-black uppercase tracking-widest text-[10px] px-5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all shadow-md"
                                                     >
                                                         Secure Link
                                                     </Button>
                                                 )}
+                                                <Link to={`/resume/${userProfile?._id}`}>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="font-black uppercase tracking-widest text-[10px] px-4 py-2 rounded-xl border border-purple-200 text-purple-700 bg-purple-50/70 hover:bg-purple-100 transition-all flex items-center gap-1.5 shadow-sm"
+                                                    >
+                                                        <FileText className="h-3.5 w-3.5 text-purple-600" /> View Resume
+                                                    </Button>
+                                                </Link>
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2">
                                                 <Link to="/account/edit">
-                                                    <Button variant="outline" className="font-black uppercase tracking-widest text-[10px] px-6 py-2 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                                                    <Button variant="outline" className="font-black uppercase tracking-widest text-[10px] px-5 py-2 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
                                                         Edit Portfolio
                                                     </Button>
                                                 </Link>
                                                 <Link to={`/resume/${userProfile?._id}`}>
-                                                    <Button variant="default" className="font-black uppercase tracking-widest text-[10px] px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-indigo-200/50 transition-all">
-                                                        Export Resume
+                                                    <Button variant="default" className="font-black uppercase tracking-widest text-[10px] px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/20 transition-all flex items-center gap-1.5">
+                                                        <FileText className="h-3.5 w-3.5 text-white" /> My AI Resume
                                                     </Button>
                                                 </Link>
                                             </div>
