@@ -37,26 +37,40 @@ const io = new Server(server, {
     },
 });
 
-// Map prevents object prototype pollution
+// Map prevents object prototype pollution - maps userId -> Set of socket.id
 const userSocketMap = new Map();
 
 export const getReciverId = (receiverId) => {
     if (!receiverId) return null;
-    return userSocketMap.get(receiverId.toString());
+    const strId = receiverId.toString();
+    const sockets = userSocketMap.get(strId);
+    if (sockets && sockets.size > 0) {
+        // Return strId as room name so io.to(receiverSocketId) broadcasts to all user's active sockets
+        return strId;
+    }
+    return null;
 };
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   
-  if (userId && typeof userId === "string") {
-    userSocketMap.set(userId, socket.id);
+  if (userId && typeof userId === "string" && userId !== "undefined" && userId !== "null") {
+    if (!userSocketMap.has(userId)) {
+      userSocketMap.set(userId, new Set());
+    }
+    userSocketMap.get(userId).add(socket.id);
+    socket.join(userId);
   }
   
   io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
 
   socket.on("disconnect", () => {
-    if (userId) {
-      userSocketMap.delete(userId);
+    if (userId && userSocketMap.has(userId)) {
+      const userSockets = userSocketMap.get(userId);
+      userSockets.delete(socket.id);
+      if (userSockets.size === 0) {
+        userSocketMap.delete(userId);
+      }
     }
     io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
   });

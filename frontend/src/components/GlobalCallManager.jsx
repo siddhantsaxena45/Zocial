@@ -104,7 +104,7 @@ const GlobalCallManager = () => {
 
   // Technical Pair-Programming & Whiteboard State
   const [callMode, setCallMode] = useState("video"); // 'video', 'pair_code', 'whiteboard'
-  const [pairCode, setPairCode] = useState(`// 💻 Zocial Live Pair-Programming Session\n// Code updates synchronize in real-time with your partner.\n\nfunction calculateSynergy(builderA, builderB) {\n  return "10x Engineering Velocity";\n}\n\nconsole.log(calculateSynergy());\n`);
+  const [pairCode, setPairCode] = useState("");
   const [pairLanguage, setPairLanguage] = useState("javascript");
   const [copiedCode, setCopiedCode] = useState(false);
   const [brushColor, setBrushColor] = useState("#6366f1");
@@ -117,11 +117,26 @@ const GlobalCallManager = () => {
   const whiteboardHistory = useRef([]);
   const callPartnerId = useRef(null);
 
+  const isCallAcceptedRef = useRef(false);
+  const incomingCallRef = useRef(false);
+  const callerInfoRef = useRef(null);
+
+  useEffect(() => {
+    isCallAcceptedRef.current = isCallAccepted;
+  }, [isCallAccepted]);
+  useEffect(() => {
+    incomingCallRef.current = incomingCall;
+  }, [incomingCall]);
+  useEffect(() => {
+    callerInfoRef.current = callerInfo;
+  }, [callerInfo]);
+
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
   const localStream = useRef(null);
   const remoteStream = useRef(null);
+  const [remoteStreamState, setRemoteStreamState] = useState(null);
   const iceCandidatesBuffer = useRef([]);
   const ringtoneAudio = useRef(null);
 
@@ -129,6 +144,10 @@ const GlobalCallManager = () => {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:stun2.l.google.com:19302" },
+      { urls: "stun:stun3.l.google.com:19302" },
+      { urls: "stun:stun4.l.google.com:19302" },
+      { urls: "stun:global.stun.twilio.com:3478" },
     ],
   };
 
@@ -146,25 +165,89 @@ const GlobalCallManager = () => {
     }
 
     if (peerConnection.current) {
-      peerConnection.current.close();
+      try {
+        peerConnection.current.onconnectionstatechange = null;
+        peerConnection.current.oniceconnectionstatechange = null;
+        peerConnection.current.ontrack = null;
+        peerConnection.current.onicecandidate = null;
+        peerConnection.current.close();
+      } catch (e) {
+        console.error("Error closing peer connection:", e);
+      }
       peerConnection.current = null;
     }
 
     if (localStream.current) {
-      localStream.current.getTracks().forEach((track) => track.stop());
+      try {
+        localStream.current.getTracks().forEach((track) => track.stop());
+      } catch (e) {}
       localStream.current = null;
     }
 
-    remoteStream.current = null;
+    if (remoteStream.current) {
+      try {
+        remoteStream.current.getTracks().forEach((track) => track.stop());
+      } catch (e) {}
+      remoteStream.current = null;
+    }
+
+    setRemoteStreamState(null);
     callPartnerId.current = null;
     whiteboardHistory.current = [];
+    setPairCode("");
 
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
+    if (ringtoneAudio.current) {
+      ringtoneAudio.current.pause();
+    }
+
     dispatch(resetCall());
     iceCandidatesBuffer.current = [];
     setIsCallAccepted(false);
+    setCallMode("video");
+  };
+
+  const setupPeerConnectionEvents = (pc) => {
+    pc.onconnectionstatechange = () => {
+      console.log("WebRTC connectionState:", pc.connectionState);
+      if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
+        toast.info("Call disconnected");
+        endCall(false);
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("WebRTC iceConnectionState:", pc.iceConnectionState);
+      if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed" || pc.iceConnectionState === "closed") {
+        toast.info("Connection terminated");
+        endCall(false);
+      }
+    };
+
+    pc.ontrack = (e) => {
+      console.log("WebRTC ontrack event received:", e);
+      let stream = e.streams && e.streams[0];
+      if (!stream) {
+        if (!remoteStream.current) {
+          remoteStream.current = new MediaStream();
+        }
+        if (e.track) {
+          remoteStream.current.addTrack(e.track);
+        }
+        stream = remoteStream.current;
+      } else {
+        remoteStream.current = stream;
+      }
+
+      setRemoteStreamState(stream);
+
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch(() => {});
+      }
+    };
   };
 
   const startCall = async (overrideTarget = null) => {
@@ -176,6 +259,9 @@ const GlobalCallManager = () => {
     }
 
     callPartnerId.current = target._id;
+    setPairCode(""); // Always empty on new call
+    setCallMode("video");
+    whiteboardHistory.current = [];
 
     // Verify mutual connection before establishing video call
     const isMutualFollow =
@@ -200,18 +286,20 @@ const GlobalCallManager = () => {
     setLoading(true);
     try {
       dispatch(setActiveCall(true));
-      localStream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
-      if (localVideoRef.current) localVideoRef.current.srcObject = localStream.current;
+      localStream.current = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream.current;
+        localVideoRef.current.play().catch(() => {});
+      }
 
       const pc = new RTCPeerConnection(iceServers);
-      localStream.current.getTracks().forEach((track) => pc.addTrack(track, localStream.current));
+      peerConnection.current = pc;
+      setupPeerConnectionEvents(pc);
 
-      pc.ontrack = (e) => {
-        if (e.streams[0]) {
-          remoteStream.current = e.streams[0];
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
-        }
-      };
+      localStream.current.getTracks().forEach((track) => pc.addTrack(track, localStream.current));
 
       pc.onicecandidate = (e) => {
         if (e.candidate && socket) {
@@ -219,11 +307,12 @@ const GlobalCallManager = () => {
         }
       };
 
-      const offer = await pc.createOffer();
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
       await pc.setLocalDescription(offer);
       socket.emit("video-offer", { to: target._id, offer: pc.localDescription, userDetails: loggedInUser });
-
-      peerConnection.current = pc;
     } catch (err) {
       console.error("Error starting call:", err);
       toast.error(err.message || "Camera/microphone access required for video call");
@@ -236,37 +325,46 @@ const GlobalCallManager = () => {
   const acceptCall = async () => {
     if (!callerInfo) return;
     dispatch(setActiveCall(true));
+    setPairCode(""); // Always empty on new call
+    setCallMode("video");
+    whiteboardHistory.current = [];
+
     try {
       const { from, offer } = callerInfo;
       callPartnerId.current = from;
-      localStream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
-      if (localVideoRef.current) localVideoRef.current.srcObject = localStream.current;
+      localStream.current = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream.current;
+        localVideoRef.current.play().catch(() => {});
+      }
 
       const pc = new RTCPeerConnection(iceServers);
-      localStream.current.getTracks().forEach((track) => pc.addTrack(track, localStream.current));
+      peerConnection.current = pc;
+      setupPeerConnectionEvents(pc);
 
-      pc.ontrack = (e) => {
-        if (e.streams[0]) {
-          remoteStream.current = e.streams[0];
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
-        }
-      };
+      localStream.current.getTracks().forEach((track) => pc.addTrack(track, localStream.current));
 
       pc.onicecandidate = (e) => {
         if (e.candidate && socket) socket.emit("ice-candidate", { to: from, candidate: e.candidate });
       };
 
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      for (const candidate of iceCandidatesBuffer.current) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      while (iceCandidatesBuffer.current.length > 0) {
+        const candidate = iceCandidatesBuffer.current.shift();
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.error("Error adding buffered candidate:", e);
+        }
       }
-      iceCandidatesBuffer.current = [];
 
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socket.emit("video-answer", { to: from, answer });
 
-      peerConnection.current = pc;
       setIsCallAccepted(true);
     } catch (err) {
       console.error("Error accepting call:", err);
@@ -274,15 +372,33 @@ const GlobalCallManager = () => {
     }
   };
 
-  // Re-attach video stream elements whenever switching modes or opening call dialog
+  // Re-attach video stream elements whenever switching modes, opening call dialog, or stream updates
   useEffect(() => {
-    if (localVideoRef.current && localStream.current) {
-      localVideoRef.current.srcObject = localStream.current;
-    }
-    if (remoteVideoRef.current && remoteStream.current) {
-      remoteVideoRef.current.srcObject = remoteStream.current;
-    }
-  }, [callMode, activeCall]);
+    const attachStreams = () => {
+      if (localVideoRef.current && localStream.current) {
+        if (localVideoRef.current.srcObject !== localStream.current) {
+          localVideoRef.current.srcObject = localStream.current;
+        }
+        localVideoRef.current.play().catch(() => {});
+      }
+      const currentRemote = remoteStream.current || remoteStreamState;
+      if (remoteVideoRef.current && currentRemote) {
+        if (remoteVideoRef.current.srcObject !== currentRemote) {
+          remoteVideoRef.current.srcObject = currentRemote;
+        }
+        remoteVideoRef.current.play().catch(() => {});
+      }
+    };
+
+    attachStreams();
+    const frameId = requestAnimationFrame(attachStreams);
+    const timeoutId = setTimeout(attachStreams, 250);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timeoutId);
+    };
+  }, [callMode, activeCall, isCallAccepted, remoteStreamState]);
 
   const rejectCall = () => {
     if (callerInfo?.from) {
@@ -316,16 +432,29 @@ const GlobalCallManager = () => {
     if (!socket) return;
     const handleVideoAnswer = async ({ answer }) => {
       if (!peerConnection.current) return;
-      await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
-      for (const candidate of iceCandidatesBuffer.current) {
-        await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+      try {
+        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
+        while (iceCandidatesBuffer.current.length > 0) {
+          const candidate = iceCandidatesBuffer.current.shift();
+          try {
+            await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (e) {
+            console.error("Error adding buffered candidate on answer:", e);
+          }
+        }
+        setIsCallAccepted(true);
+      } catch (err) {
+        console.error("Error handling video answer:", err);
       }
-      iceCandidatesBuffer.current = [];
-      setIsCallAccepted(true);
     };
     const handleIceCandidate = async ({ candidate }) => {
-      if (peerConnection.current?.remoteDescription?.type) {
-        await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+      if (!candidate) return;
+      if (peerConnection.current && peerConnection.current.remoteDescription && peerConnection.current.remoteDescription.type) {
+        try {
+          await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.error("Error adding ICE candidate:", e);
+        }
       } else {
         iceCandidatesBuffer.current.push(candidate);
       }
@@ -364,8 +493,8 @@ const GlobalCallManager = () => {
     };
 
     const handleCallEnded = () => {
-      if (incomingCall && !isCallAccepted) {
-        toast.info(`Missed call from @${callerInfo?.userDetails?.username || 'collaborator'}`);
+      if (incomingCallRef.current && !isCallAcceptedRef.current) {
+        toast.info(`Missed call from @${callerInfoRef.current?.userDetails?.username || 'collaborator'}`);
       } else {
         toast.info("Call ended");
       }
@@ -553,7 +682,7 @@ const GlobalCallManager = () => {
   const handleCodeChange = (e) => {
     const newCode = e.target.value;
     setPairCode(newCode);
-    const targetId = callerInfo?.from || selectedUser?._id;
+    const targetId = callPartnerId.current || callerInfo?.from || selectedUser?._id;
     if (targetId && socket) {
       socket.emit("pair_code_change", {
         to: targetId,

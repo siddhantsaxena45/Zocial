@@ -140,14 +140,6 @@ function App() {
         dispatch(setIncomingCall({ incoming: true, info: { from, offer, userDetails } }));
       });
 
-      socketio.on("call-ended", () => {
-        dispatch(resetCall());
-      });
-
-      socketio.on("call-rejected", () => {
-        dispatch(resetCall());
-      });
-
       return () => {
         socketio.disconnect();
         dispatch(setSocket(null))
