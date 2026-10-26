@@ -171,15 +171,26 @@ const ChatUser = ({ user, isOnline, onBack }) => {
         </div>
         <div className="flex items-center gap-3 sm:gap-4">
             <div className="group relative">
-                <VideoIcon 
+                <button
+                    type="button"
                     onClick={() => {
+                        if (!isMutualConnection) {
+                            toast.error("Video calls are only available after connecting. Send a synergy request first!");
+                            return;
+                        }
                         dispatch(setSelectedUser(user));
                         window.dispatchEvent(new CustomEvent("initiate-video-call", { detail: { targetUser: user } }));
                     }}
-                    className="w-7 h-7 text-indigo-600 hover:text-indigo-800 cursor-pointer transition-all hover:scale-110 active:scale-90" 
-                />
-                <div className="absolute top-8 right-0 bg-slate-800 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                    Video Call & Pair Code
+                    className={`p-1.5 rounded-xl transition-all ${
+                        isMutualConnection
+                            ? "text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 cursor-pointer hover:scale-110 active:scale-90"
+                            : "text-slate-300 hover:text-slate-400 cursor-not-allowed opacity-60"
+                    }`}
+                >
+                    <VideoIcon className="w-6 h-6" />
+                </button>
+                <div className="absolute top-9 right-0 bg-slate-800 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-md">
+                    {isMutualConnection ? "Video Call & Pair Code" : "Connect with builder to unlock video calls"}
                 </div>
             </div>
         </div>
