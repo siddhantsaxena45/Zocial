@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { ArrowLeft, Loader2, VideoIcon, FileText, Sparkles, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 // import VideoCall from "./VideoCallDialog";
@@ -15,12 +15,17 @@ const ChatUser = ({ user, isOnline, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [synergyStatus, setSynergyStatus] = useState("none");
   const [connecting, setConnecting] = useState(false);
+  const messagesEndRef = useRef(null);
   const dispatch = useDispatch();
   const socket = useSelector((state) => state.socketio.socket);
   const { messages } = useSelector((state) => state.chat);
   const { user: loggedInUser } = useSelector((state) => state.auth);
 
   const { refetch } = useGetAllMessages(user._id);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const isMutualConnection = user.isMutual || synergyStatus === "accepted" || (
     (loggedInUser?.following || []).some(id => String(id?._id || id) === String(user._id)) &&
@@ -127,52 +132,61 @@ const ChatUser = ({ user, isOnline, onBack }) => {
     }
   };
 
+  const cleanHandle = user?.username 
+    ? (user.username.startsWith('@') ? user.username : `@${user.username.toLowerCase().replace(/\s+/g, '')}`)
+    : '';
+  const displayName = user?.name || user?.username || "Builder";
+
   return (
     <div className="w-full h-full bg-slate-50/50 flex flex-col overflow-hidden">
 
       {/* Header */}
-      <div className="h-16 px-6 bg-white/70 backdrop-blur-xl border-b border-purple-100/60 flex items-center justify-between shrink-0 z-10">
+      <div className="h-16 px-4 sm:px-6 bg-white/80 backdrop-blur-xl border-b border-purple-100/60 flex items-center justify-between shrink-0 z-10">
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {onBack && (
-              <button
-                onClick={onBack}
-                className="mr-2 text-slate-400 hover:text-indigo-600 transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-
+            <button
+              onClick={onBack}
+              className="md:hidden p-1.5 -ml-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
           )}
-          <Link to={`/profile/${user?._id}`}>
-            <Avatar className="h-10 w-10">
+          <Link to={`/profile/${user?._id}`} className="shrink-0">
+            <Avatar className="h-10 w-10 shadow-sm border border-purple-100">
               <AvatarImage
                 src={user?.profilepicture || "https://github.com/shadcn.png"}
               />
-              <AvatarFallback>{user?.username?.[0] || "U"}</AvatarFallback>
+              <AvatarFallback className="bg-indigo-50 text-indigo-700 font-bold text-xs">
+                {displayName.charAt(0).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="flex flex-col">
-            <Link to={`/profile/${user?._id}`} className="cursor-pointer flex items-baseline gap-1.5">
-              <span className="font-bold text-slate-900">{user?.name || user?.username || "Unknown"}</span>
-              <span className="text-xs font-medium text-slate-400">
-                {user?.username?.startsWith('@') ? user?.username : `@${user?.username}`}
+          <div className="flex flex-col min-w-0">
+            <Link to={`/profile/${user?._id}`} className="cursor-pointer flex items-baseline gap-2 truncate">
+              <span className="font-bold text-slate-900 text-sm sm:text-base truncate tracking-tight">{displayName}</span>
+              <span className="text-xs font-semibold text-indigo-600 truncate">
+                {cleanHandle}
               </span>
             </Link>
-            <div className="flex items-center gap-2">
-                <span
-                className={`text-[10px] font-bold ${
-                    isOnline ? "text-green-500" : "text-gray-400"
+            <div className="flex items-center gap-2 mt-0.5">
+              <span
+                className={`inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider ${
+                  isOnline ? "text-emerald-600" : "text-slate-400"
                 }`}
-                >
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} />
                 {isOnline ? "ONLINE" : "OFFLINE"}
+              </span>
+              {!isMutualConnection && (
+                <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
+                  IDENTITY REQUEST
                 </span>
-                {!isMutualConnection && (
-                    <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">IDENTITY REQUEST</span>
-                )}
+              )}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             <div className="group relative">
                 <button
                     type="button"
@@ -199,31 +213,42 @@ const ChatUser = ({ user, isOnline, onBack }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-5 flex flex-col gap-3.5">
-        {messages?.map((msg, idx) => {
-          const isMe = (msg.senderId?._id || msg.senderId) === loggedInUser?._id;
-          return (
-            <div
-              key={idx}
-              className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
-            >
-              <div
-                className={`max-w-[85%] md:max-w-md px-4.5 py-2.5 rounded-2xl text-sm font-medium shadow-xs transition-all leading-relaxed ${
-                  isMe
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-br-xs shadow-purple-500/10"
-                    : "bg-white text-slate-900 rounded-bl-xs border border-slate-200/70 shadow-slate-200/40"
-                }`}
-              >
-                {msg.message}
-              </div>
-              {msg.createdAt && (
-                <span className="text-[10px] text-slate-400 px-1 mt-1 font-semibold">
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              )}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-5 flex flex-col gap-3.5">
+        {(!messages || messages.length === 0) ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center animate-in fade-in duration-500">
+            <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-3 text-indigo-500">
+              <Sparkles className="h-6 w-6" />
             </div>
-          );
-        })}
+            <p className="text-sm font-bold text-slate-700">Encrypted Transmission Channel</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs">Send a message to begin your conversation with {displayName}.</p>
+          </div>
+        ) : (
+          messages.map((msg, idx) => {
+            const isMe = (msg.senderId?._id || msg.senderId) === loggedInUser?._id;
+            return (
+              <div
+                key={idx}
+                className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-full`}
+              >
+                <div
+                  className={`max-w-[80%] sm:max-w-md min-w-[3.5rem] px-4 py-2.5 rounded-2xl text-sm font-medium transition-all leading-relaxed break-words whitespace-pre-wrap shadow-sm ${
+                    isMe
+                      ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white rounded-br-sm shadow-purple-500/15"
+                      : "bg-white text-slate-800 rounded-bl-sm border border-purple-100/80 shadow-slate-200/40"
+                  }`}
+                >
+                  {msg.message}
+                </div>
+                {msg.createdAt && (
+                  <span className="text-[10px] text-slate-400 px-1 mt-1 font-semibold tracking-tight">
+                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input / Reply Bar */}
