@@ -167,6 +167,27 @@ const GlobalCallManager = () => {
       toast.error("Please open a conversation to start video call");
       return;
     }
+
+    // Verify mutual connection before establishing video call
+    const isMutualFollow =
+      (loggedInUser?.following || []).some(id => String(id?._id || id) === String(target._id)) &&
+      (loggedInUser?.followers || []).some(id => String(id?._id || id) === String(target._id));
+
+    if (!isMutualFollow) {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/user/synergy/status/${target._id}`,
+          { withCredentials: true }
+        );
+        if (res.data?.status !== "accepted") {
+          toast.error("Video calls are only available between connected peers. Send a synergy request first!");
+          return;
+        }
+      } catch (e) {
+        // Fallback safety
+      }
+    }
+
     setLoading(true);
     try {
       dispatch(setActiveCall(true));
@@ -324,10 +345,16 @@ const GlobalCallManager = () => {
       endCall(false);
     };
 
+    const handleCallError = ({ message }) => {
+      toast.error(message || "Video calls are only allowed between connected peers.");
+      endCall(false);
+    };
+
     socket.on("video-answer", handleVideoAnswer);
     socket.on("ice-candidate", handleIceCandidate);
     socket.on("call-ended", handleCallEnded);
     socket.on("call-rejected", handleCallRejected);
+    socket.on("call-error", handleCallError);
     socket.on("pair_code_update", handlePairCodeUpdate);
     socket.on("whiteboard_draw_update", handleWhiteboardDraw);
     socket.on("whiteboard_cleared", handleWhiteboardClear);
@@ -337,6 +364,7 @@ const GlobalCallManager = () => {
       socket.off("ice-candidate", handleIceCandidate);
       socket.off("call-ended", handleCallEnded);
       socket.off("call-rejected", handleCallRejected);
+      socket.off("call-error", handleCallError);
       socket.off("pair_code_update", handlePairCodeUpdate);
       socket.off("whiteboard_draw_update", handleWhiteboardDraw);
       socket.off("whiteboard_cleared", handleWhiteboardClear);
