@@ -35,9 +35,7 @@ const ResumeGenerator = () => {
     }, [userProfile]);
 
     const isOwner = Boolean(
-        (authUser?._id && params.id && String(authUser._id) === String(params.id)) ||
-        (!params.id && authUser?._id) ||
-        (authUser?._id && userProfile?._id && String(authUser._id) === String(userProfile._id))
+        authUser?._id && params.id && String(authUser._id) === String(params.id)
     );
 
     // Handle Generation / Regeneration using Gemini AI (Owner Only)
