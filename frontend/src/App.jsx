@@ -20,6 +20,7 @@ import { setLikeNotification, setAllNotifications } from "./redux/rtnSlice"
 import { setMessageNotification } from "./redux/messageNotificationSlice";
 import { setIncomingCall, resetCall } from "./redux/callSlice";
 import ProtectedRoutes from "./components/ProtectedRoutes"
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import ZocialScout from "./components/ZocialScout";
 import GlobalCallManager from "./components/GlobalCallManager";
 

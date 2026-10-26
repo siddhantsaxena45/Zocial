@@ -23,7 +23,6 @@ import { clearNotifications, markSynergyNotificationsSeen } from '@/redux/rtnSli
 import { clearMessages } from '@/redux/messageNotificationSlice';
 import SearchDialog from './SearchDialog';
 import SynergyRequests from './SynergyRequests';
-import JobFitModal from './JobFitModal';
 
 
 const LeftSidebar = () => {
@@ -34,7 +33,6 @@ const LeftSidebar = () => {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(false);
-  const [jobFitOpen, setJobFitOpen] = useState(false);
   const { likeNotification } = useSelector(state => state.realtimenotification);
 
   const { messages } = useSelector(state => state.messageNotification);
@@ -61,7 +59,6 @@ const LeftSidebar = () => {
     { icon: <Home />, text: 'Home' },
     { icon: <Search />, text: 'Search' },
     { icon: <Compass />, text: 'Zocial Scout' },
-    { icon: <Sparkles className="text-indigo-600" />, text: 'AI Job-Fit' },
     { icon: <Bell />, text: 'Notifications' },
     { icon: <Users />, text: 'Synergy' },
     { icon: <MessageCircle />, text: 'Messages' },
@@ -121,9 +118,6 @@ const LeftSidebar = () => {
     }
     else if (text === "Zocial Scout") {
       navigate("/scout");
-    }
-    else if (text === "AI Job-Fit") {
-      setJobFitOpen(true);
     }
 
   }
@@ -248,12 +242,6 @@ const LeftSidebar = () => {
             <Compass className="h-3.5 w-3.5" /> Scout Engine
           </button>
           <button 
-            onClick={() => setJobFitOpen(true)} 
-            className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white text-xs font-black shrink-0 shadow-sm active:scale-95 transition-all"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-amber-300" /> AI Job-Fit
-          </button>
-          <button 
             onClick={() => { dispatch(markSynergyNotificationsSeen()); setSynergyOpen(true); }} 
             className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all shadow-sm ${
               unseenSynergyCount > 0 
@@ -342,7 +330,6 @@ const LeftSidebar = () => {
       <CreatePost open={open} setOpen={setOpen} />
       <SearchDialog open={searchOpen} setOpen={setSearchOpen} />
       <SynergyRequests open={synergyOpen} setOpen={setSynergyOpen} />
-      <JobFitModal open={jobFitOpen} setOpen={setJobFitOpen} />
     </>
 
 

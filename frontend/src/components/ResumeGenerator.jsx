@@ -7,11 +7,12 @@ import { Button } from './ui/button';
 import { 
     ArrowLeft, Download, Mail, Briefcase, Award, Zap, 
     LayoutDashboard, Sparkles, Loader2, RefreshCw, Layers, Github, Globe,
-    Eye, ShieldCheck 
+    Eye, ShieldCheck, Target 
 } from 'lucide-react';
 import useAxiosInterceptor from '@/hooks/useAxiosInterceptor';
 import axios from 'axios';
 import { toast } from 'sonner';
+import JobFitModal from './JobFitModal';
 
 const ResumeGenerator = () => {
     useAxiosInterceptor();
@@ -24,6 +25,7 @@ const ResumeGenerator = () => {
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [resumeData, setResumeData] = useState(null);
+    const [jobFitOpen, setJobFitOpen] = useState(false);
 
     // Sync resumeData when userProfile changes
     useEffect(() => {
@@ -103,6 +105,16 @@ const ResumeGenerator = () => {
                 </Button>
 
                 <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* AI Job-Fit Simulator Button - Next to Generate Resume */}
+                    <Button 
+                        variant="outline"
+                        onClick={() => setJobFitOpen(true)} 
+                        className="gap-2 bg-white/90 hover:bg-white text-purple-700 border-purple-200/90 hover:border-purple-300 text-xs font-bold rounded-xl shadow-xs transition-all"
+                    >
+                        <Target className="h-4 w-4 text-purple-600" />
+                        <span>AI Job-Fit</span>
+                    </Button>
+
                     {/* Gemini AI Action Button - ONLY VISIBLE TO RESUME OWNER */}
                     {isOwner && (
                         <Button 
@@ -407,6 +419,9 @@ const ResumeGenerator = () => {
                     }
                 }
             `}</style>
+
+            {/* AI Job-Fit Simulator Modal */}
+            <JobFitModal open={jobFitOpen} setOpen={setJobFitOpen} />
         </div>
     );
 };
