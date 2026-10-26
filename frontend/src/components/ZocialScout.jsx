@@ -78,6 +78,9 @@ const ZocialScout = () => {
   };
 
   const isFilterActive = Boolean(semanticQuery.trim() || skillsQuery.trim() || roleQuery.trim());
+  const visibleCandidates = candidates.filter(
+    (c) => String(c._id) !== String(authUser?._id)
+  );
 
   return (
     <div className="w-full py-4 md:py-8 bg-transparent">
@@ -193,7 +196,7 @@ const ZocialScout = () => {
             </div>
 
             <div className="text-xs font-bold text-slate-500">
-              Found <span className="text-indigo-600 font-black">{candidates.length}</span> {isFilterActive ? "Matching Candidates" : "Verified Builders"}
+              Found <span className="text-indigo-600 font-black">{visibleCandidates.length}</span> {isFilterActive ? "Matching Candidates" : "Verified Builders"}
             </div>
           </div>
         </div>
@@ -204,7 +207,7 @@ const ZocialScout = () => {
             <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-xs font-bold uppercase tracking-widest">Running AI Semantic Talent Match...</p>
           </div>
-        ) : candidates.length === 0 ? (
+        ) : visibleCandidates.length === 0 ? (
           <div className="py-20 text-center glass-card p-12 rounded-3xl border border-dashed border-slate-300 space-y-4">
             <Users className="h-12 w-12 text-slate-300 mx-auto" />
             <h3 className="text-base font-black text-slate-700">No Candidates Matching Criteria</h3>
@@ -214,7 +217,7 @@ const ZocialScout = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {candidates.map((candidate) => (
+            {visibleCandidates.map((candidate) => (
               <div
                 key={candidate._id}
                 className="glass-card rounded-3xl p-6 border border-white/80 shadow-xl hover:shadow-2xl transition-all duration-300 space-y-5 flex flex-col justify-between"

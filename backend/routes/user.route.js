@@ -15,7 +15,7 @@ router.route('/login').post(login);
 router.route('/google-login').post(googleLogin);
 router.route('/logout').get(isAuthenticated, logout);
 router.route('/search').get(isAuthenticated, searchUsers);
-router.route('/scout').get(isAuthenticated, scoutCandidates);
+router.route('/scout').get(isAuthenticated, scoutCandidates).post(isAuthenticated, scoutCandidates);
 router.route('/:id/profile').get(isAuthenticated, getProfile);
 router.route('/profile/edit').post(isAuthenticated, upload.single("profilephoto"), editProfile);
 router.route('/suggested').get(isAuthenticated, getSuggestedUsers);

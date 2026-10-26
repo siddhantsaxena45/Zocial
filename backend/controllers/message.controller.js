@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
 import { User } from "../models/user.model.js";
+import { ConnectionRequest } from "../models/connectionRequest.model.js";
 import { getReciverId, io } from "../socket/socket.js";
 
 export const sendMessage = async (req, res) => {
@@ -20,7 +21,7 @@ export const sendMessage = async (req, res) => {
 
     const sanitizedMessage = message.trim().substring(0, 2000);
 
-    // 🔒 Security: Check for mutual follow before allowing message transmission
+    // 🔒 Security: Check for mutual connection before allowing unlimited messaging
     const [sender, receiver] = await Promise.all([
       User.findById(senderId).select("following"),
       User.findById(receiverId).select("following")
@@ -30,18 +31,57 @@ export const sendMessage = async (req, res) => {
       return res.status(404).json({ message: "User not found", success: false });
     }
 
-    const isMutual = sender.following.includes(receiverId) && receiver.following.includes(senderId);
+    const isMutualFollow =
+      sender.following?.some((id) => id.toString() === receiverId.toString()) &&
+      receiver.following?.some((id) => id.toString() === senderId.toString());
 
-    if (!isMutual) {
-      return res.status(403).json({
-        message: "Mutual follow (verified link) required to initiate secure transmission.",
-        success: false
+    let isConnected = Boolean(isMutualFollow);
+
+    if (!isConnected) {
+      const acceptedConnection = await ConnectionRequest.findOne({
+        $or: [
+          { sender: senderId, receiver: receiverId, status: "accepted" },
+          { sender: receiverId, receiver: senderId, status: "accepted" }
+        ]
       });
+      if (acceptedConnection) {
+        isConnected = true;
+      }
     }
 
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] }
     });
+
+    // 🔒 One-message rule: Users not connected can send only ONE message until the other person replies or connects
+    if (!isConnected && conversation && conversation.messages?.length > 0) {
+      const [senderMsgCount, receiverMsgCount] = await Promise.all([
+        Message.countDocuments({
+          _id: { $in: conversation.messages },
+          senderId: senderId
+        }),
+        Message.countDocuments({
+          _id: { $in: conversation.messages },
+          senderId: receiverId
+        })
+      ]);
+
+      if (senderMsgCount >= 1 && receiverMsgCount === 0) {
+        return res.status(403).json({
+          message: "You can send only one message if not connected. Wait for their reply or connect with them.",
+          success: false,
+          limitReached: true
+        });
+      }
+
+      if (senderMsgCount > receiverMsgCount) {
+        return res.status(403).json({
+          message: "You can send only one message at a time if not connected. Connect with them to chat freely.",
+          success: false,
+          limitReached: true
+        });
+      }
+    }
 
     if (!conversation) {
       conversation = await Conversation.create({

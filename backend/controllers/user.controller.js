@@ -795,13 +795,15 @@ export const getMe = async (req, res) => {
  */
 export const scoutCandidates = async (req, res) => {
     try {
-        const { skills, role, openOnly, query } = req.query;
+        const { skills, role, openOnly, query, jd } = { ...req.query, ...req.body };
 
         const isSearching = Boolean(
             (skills && skills.trim()) || 
             (role && role.trim()) || 
-            (query && query.trim())
+            (query && query.trim()) ||
+            (jd && jd.trim())
         );
+        const isJDMatch = Boolean(jd && jd.trim());
 
         const filter = {};
         if (req.id) {
@@ -846,17 +848,19 @@ export const scoutCandidates = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 isSearching: false,
+                isJDMatch: false,
                 total: formattedCandidates.length,
                 candidates: formattedCandidates
             });
         }
 
-        // 2. Search State: Perform Real AI Semantic Match
+        // 2. Search State: Perform Real AI Semantic Match / ATS JD Match
         const semanticQuery = [
+            jd ? `JOB DESCRIPTION (JD):\n"""${jd.trim()}"""` : '',
             query ? `Search Query: "${query.trim()}"` : '',
             role ? `Target Role/Specialization: "${role.trim()}"` : '',
             skills ? `Required Tech Stack/Skills: "${skills.trim()}"` : ''
-        ].filter(Boolean).join(" | ");
+        ].filter(Boolean).join("\n\n");
 
         // Build concise candidate profiles for semantic evaluation
         const candidateProfiles = candidates.map((c) => ({
@@ -874,18 +878,25 @@ export const scoutCandidates = async (req, res) => {
 
         let semanticScoreMap = {};
         try {
-            const prompt = `You are an elite Principal AI Technical Recruiter.
-Evaluate each candidate builder semantically against the following search requirements:
-REQUIREMENTS: ${semanticQuery}
+            const prompt = `You are an elite Principal AI Technical Recruiter and ATS (Applicant Tracking System) Evaluation Engine.
+Evaluate each candidate builder semantically against the following Job Description (JD) and search requirements:
+
+TARGET REQUIREMENTS / JOB DESCRIPTION:
+${semanticQuery}
 
 CANDIDATES:
 ${JSON.stringify(candidateProfiles, null, 2)}
 
 Instructions:
-Perform true SEMANTIC matching. Consider:
-1. Technical scope, related frameworks/tools, and architectural capability demonstrated in bio, skills, and transmissions.
-2. Even if exact keywords differ (e.g. "React" aligns with "Next.js/Frontend", "FastAPI/Postgres" aligns with "Backend API"), assign appropriate semantic scores.
-3. If a candidate closely aligns, assign 80-98%. If partially aligns, assign 50-79%. If low/no alignment, assign 15-45%.
+Perform true ATS semantic scoring:
+1. Compare candidate's proven skills, target role, bio, resume summary, and verified proof-of-work project transmissions against the requirements in the JD.
+2. Assign an ATS Match Score (10 to 99):
+   - 88-99%: Top-tier match with key technologies, architecture, and senior scope.
+   - 70-87%: Solid relevant match with core technologies or strong transferable builder experience.
+   - 45-69%: Partial match or foundational overlap.
+   - 10-44%: Minimal or distant alignment.
+3. Identify exact "matchedSkills" found in the JD that the candidate possesses.
+4. Provide a punchy 1-sentence "semanticReason" (e.g. "Direct match with React, Node.js, and cloud microservices required in JD").
 
 Return strict valid JSON with an array named "results":
 {
@@ -970,14 +981,14 @@ Return strict valid JSON with an array named "results":
             };
         });
 
-        // Filter and sort by highest match score
+        // Sort strictly by highest ATS match score first
         const relevantCandidates = scoredCandidates
-            .filter(c => c.matchScore >= 20)
-            .sort((a, b) => b.matchScore - a.matchScore);
+            .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
 
         return res.status(200).json({
             success: true,
             isSearching: true,
+            isJDMatch,
             total: relevantCandidates.length,
             candidates: relevantCandidates
         });

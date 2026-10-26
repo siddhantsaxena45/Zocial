@@ -11,7 +11,6 @@ import {
 import useAxiosInterceptor from '@/hooks/useAxiosInterceptor';
 import axios from 'axios';
 import { toast } from 'sonner';
-import JobFitModal from './JobFitModal';
 
 const ResumeGenerator = () => {
     useAxiosInterceptor();
@@ -25,7 +24,6 @@ const ResumeGenerator = () => {
     const [targetProfile, setTargetProfile] = useState(null);
     const [resumeData, setResumeData] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [jobFitOpen, setJobFitOpen] = useState(false);
 
     // Fetch fresh profile and resume whenever params.id changes
     useEffect(() => {
@@ -135,16 +133,6 @@ const ResumeGenerator = () => {
                 </Button>
 
                 <div className="flex items-center gap-2.5 flex-wrap">
-                    {/* AI Job-Fit Simulator Button - Next to Generate Resume */}
-                    <Button 
-                        variant="outline"
-                        onClick={() => setJobFitOpen(true)} 
-                        className="gap-2 bg-white/90 hover:bg-white text-purple-700 border-purple-200/90 hover:border-purple-300 text-xs font-bold rounded-xl shadow-xs transition-all"
-                    >
-                        <Target className="h-4 w-4 text-purple-600" />
-                        <span>AI Job-Fit</span>
-                    </Button>
-
                     {/* Gemini AI Action Button - ONLY VISIBLE TO RESUME OWNER */}
                     {isOwner && (
                         <Button 
@@ -175,16 +163,6 @@ const ResumeGenerator = () => {
                     </Button>
                 </div>
             </div>
-
-            {/* Public profile notice for visitors when owner has not generated full resume yet */}
-            {!resumeData && !isOwner && (
-                <div className="w-full max-w-4xl mx-auto mb-4 print:hidden">
-                    <div className="p-3.5 rounded-2xl bg-purple-50/90 border border-purple-200/80 flex items-center gap-3 text-purple-900 text-xs font-medium shadow-xs">
-                        <ShieldCheck className="h-5 w-5 text-purple-600 shrink-0" />
-                        <span>Viewing public portfolio profile for <strong>@{targetProfile.username}</strong>. Only the account owner can build or update their AI resume.</span>
-                    </div>
-                </div>
-            )}
 
             {/* A4 Paper Canvas */}
             <div className="w-full max-w-4xl mx-auto bg-white shadow-2xl print:shadow-none min-h-[1056px] p-5 sm:p-10 md:p-16 relative overflow-hidden rounded-3xl print:rounded-none border border-purple-100/60 print:border-none">
@@ -427,7 +405,7 @@ const ResumeGenerator = () => {
                                     </div>
                                 ))}
                                 
-                                {(!userProfile.posts || userProfile.posts.length === 0) && (
+                                {(!targetProfile.posts || targetProfile.posts.length === 0) && (
                                     <span className="text-xs text-slate-400 font-medium">
                                         No professional transmissions logged yet. Post project updates to build your portfolio.
                                     </span>
@@ -449,9 +427,6 @@ const ResumeGenerator = () => {
                     }
                 }
             `}</style>
-
-            {/* AI Job-Fit Simulator Modal */}
-            <JobFitModal open={jobFitOpen} setOpen={setJobFitOpen} />
         </div>
     );
 };

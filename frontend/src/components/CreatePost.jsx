@@ -260,37 +260,6 @@ const CreatePost = ({ open, setOpen }) => {
                 />
               </div>
 
-              {/* Code Snippet Inspector Input */}
-              <div className="space-y-1.5 bg-white rounded-xl p-2.5 border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                    <Code className="h-3.5 w-3.5 text-indigo-500" /> Code Snippet / Key Function
-                  </span>
-                  <select
-                    value={codeLanguage}
-                    onChange={(e) => setCodeLanguage(e.target.value)}
-                    className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 outline-none"
-                  >
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="python">Python</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="sql">SQL</option>
-                    <option value="go">Go</option>
-                    <option value="rust">Rust</option>
-                    <option value="cpp">C++</option>
-                  </select>
-                </div>
-                <textarea
-                  placeholder="// Paste your core algorithmic milestone or key snippet here..."
-                  value={codeSnippet}
-                  onChange={(e) => setCodeSnippet(e.target.value)}
-                  rows={3}
-                  className="w-full bg-slate-900 text-emerald-400 font-mono text-[11px] p-2 rounded-lg outline-none resize-none"
-                />
-              </div>
-
               {/* 🤝 Synergy Collaborator Search & Tagging */}
               <div className="space-y-2">
                 {selectedCollaborator ? (
