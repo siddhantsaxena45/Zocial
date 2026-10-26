@@ -11,8 +11,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Camera, User, ChevronRight, Sparkles, Github, Globe, FileText, ArrowRight } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Loader2, Camera, User, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { setAuthUser } from '@/redux/authSlice';
 import axios from 'axios';
@@ -104,9 +104,6 @@ const EditProfile = () => {
         }
     };
 
-    const aiHeadline = user?.resume_data?.headline || user?.targetRole || "";
-    const aiSummary = user?.resume_data?.ai_summary || user?.ai_summary || "Gemini AI analyzes your project transmissions to automatically synthesize your career headline and resume.";
-
     return (
         <div className="min-h-screen w-full pt-24 pb-16 px-4 md:px-10 bg-slate-50/50">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -114,11 +111,11 @@ const EditProfile = () => {
                 {/* Header Section */}
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-indigo-600 mb-1">
-                        <Sparkles className="h-4 w-4" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Identity Management</span>
+                        <User className="h-4 w-4" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Profile Settings</span>
                     </div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Refine Your Professional Presence</h1>
-                    <p className="text-slate-500 text-sm font-medium">Your resume, career summary, and skill stack are synthesized automatically from your project transmissions.</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Account & Identity Settings</h1>
+                    <p className="text-slate-500 text-sm font-medium">Update your profile picture, display name, unique handle, and demographic preferences.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
