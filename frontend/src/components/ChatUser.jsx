@@ -21,6 +21,14 @@ const ChatUser = ({ user, isOnline, onBack }) => {
 
 
   useEffect(() => {
+    const draft = localStorage.getItem("zocial_chat_draft");
+    if (draft) {
+      setText(draft);
+      localStorage.removeItem("zocial_chat_draft");
+    }
+  }, [user?._id]);
+
+  useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = () => {

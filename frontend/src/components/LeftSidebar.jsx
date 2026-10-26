@@ -239,6 +239,7 @@ const LeftSidebar = () => {
       <CreatePost open={open} setOpen={setOpen} />
       <SearchDialog open={searchOpen} setOpen={setSearchOpen} />
       <SynergyRequests open={synergyOpen} setOpen={setSynergyOpen} />
+      <JobFitModal open={jobFitOpen} setOpen={setJobFitOpen} />
     </>
 
 
