@@ -133,6 +133,7 @@ const GlobalCallManager = () => {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const peerConnection = useRef(null);
   const localStream = useRef(null);
   const remoteStream = useRef(null);
@@ -208,6 +209,7 @@ const GlobalCallManager = () => {
 
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
 
     if (ringtoneAudio.current) {
       ringtoneAudio.current.pause();
@@ -274,13 +276,15 @@ const GlobalCallManager = () => {
         }
       }
 
-      // Always instantiate fresh MediaStream instance with all tracks so React detects state change
-      const freshStream = new MediaStream(remoteStream.current.getTracks());
-      remoteStream.current = freshStream;
-      setRemoteStreamState(freshStream);
+      setRemoteStreamState(remoteStream.current);
 
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = freshStream;
+      if (remoteAudioRef.current && remoteAudioRef.current.srcObject !== remoteStream.current) {
+        remoteAudioRef.current.srcObject = remoteStream.current;
+        remoteAudioRef.current.play().catch(() => {});
+      }
+
+      if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== remoteStream.current) {
+        remoteVideoRef.current.srcObject = remoteStream.current;
         remoteVideoRef.current.play().catch(() => {});
       }
     };
@@ -423,6 +427,12 @@ const GlobalCallManager = () => {
           remoteVideoRef.current.srcObject = currentRemote;
         }
         remoteVideoRef.current.play().catch(() => {});
+      }
+      if (remoteAudioRef.current && currentRemote) {
+        if (remoteAudioRef.current.srcObject !== currentRemote) {
+          remoteAudioRef.current.srcObject = currentRemote;
+        }
+        remoteAudioRef.current.play().catch(() => {});
       }
     };
 
@@ -637,7 +647,8 @@ const GlobalCallManager = () => {
   const switchCallMode = (newMode, emitEvent = true) => {
     setCallMode(newMode);
     if (emitEvent) {
-      const targetId = callPartnerId.current || callerInfo?.from || selectedUser?._id;
+      const rawTarget = callPartnerId.current || callerInfo?.from || selectedUser?._id || selectedUser;
+      const targetId = typeof rawTarget === "object" && rawTarget?._id ? rawTarget._id.toString() : (rawTarget ? rawTarget.toString() : null);
       if (targetId && socket) {
         socket.emit("call_mode_change", {
           to: targetId,
@@ -775,6 +786,7 @@ const GlobalCallManager = () => {
 
   return (
     <>
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
       {incomingCall && !activeCall && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-sm bg-white border border-indigo-100 shadow-2xl rounded-2xl p-4 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-4">
@@ -837,17 +849,31 @@ const GlobalCallManager = () => {
             
             {/* 1. Video Only Mode */}
             {callMode === "video" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
-                <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
-                  <video ref={setLocalVideo} autoPlay muted playsInline className="w-full h-full object-cover" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 h-full min-h-0">
+                <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg min-h-0">
+                  <video
+                    ref={setLocalVideo}
+                    autoPlay
+                    muted
+                    playsInline
+                    onLoadedMetadata={(e) => e.currentTarget.play().catch(() => {})}
+                    className="w-full h-full object-cover"
+                  />
                   <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white">
                     You ({loggedInUser?.username})
                   </span>
                 </div>
-                <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
-                  <video ref={setRemoteVideo} autoPlay playsInline className="w-full h-full object-cover" />
+                <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg min-h-0">
+                  <video
+                    ref={setRemoteVideo}
+                    autoPlay
+                    muted
+                    playsInline
+                    onLoadedMetadata={(e) => e.currentTarget.play().catch(() => {})}
+                    className="w-full h-full object-cover"
+                  />
                   <span className="absolute bottom-3 left-3 bg-indigo-600/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white">
-                    Partner ({selectedUser?.username || "Collaborator"})
+                    Partner ({selectedUser?.username || callerInfo?.userDetails?.username || "Collaborator"})
                   </span>
                 </div>
               </div>
@@ -855,11 +881,11 @@ const GlobalCallManager = () => {
 
             {/* 2. Pair Programming Mode */}
             {callMode === "pair_code" && (
-              <div className="flex flex-col md:flex-row gap-4 h-full">
+              <div className="flex flex-col md:flex-row gap-3 h-full min-h-0">
                 {/* Code Editor */}
-                <div className="flex-1 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col overflow-hidden">
-                  <div className="p-3 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
+                <div className="flex-1 min-h-0 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col overflow-hidden">
+                  <div className="p-2 sm:p-3 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <select
                         value={pairLanguage}
                         onChange={(e) => setPairLanguage(e.target.value)}
@@ -895,15 +921,29 @@ const GlobalCallManager = () => {
                   />
                 </div>
 
-                {/* PiP Videos Side-panel */}
-                <div className="w-full md:w-56 flex md:flex-col gap-3">
+                {/* PiP Videos Side-panel on Desktop, or Compact Bottom Strip on Mobile */}
+                <div className="w-full md:w-56 flex md:flex-col gap-2 shrink-0 h-24 sm:h-28 md:h-auto">
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={setLocalVideo} autoPlay muted playsInline className="w-full h-full object-cover" />
-                    <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold">You</span>
+                    <video
+                      ref={setLocalVideo}
+                      autoPlay
+                      muted
+                      playsInline
+                      onLoadedMetadata={(e) => e.currentTarget.play().catch(() => {})}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1.5 left-2 bg-black/60 px-1.5 py-0.5 rounded text-[9px] font-bold">You</span>
                   </div>
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={setRemoteVideo} autoPlay playsInline className="w-full h-full object-cover" />
-                    <span className="absolute bottom-2 left-2 bg-indigo-600/80 px-2 py-0.5 rounded text-[9px] font-bold">Partner</span>
+                    <video
+                      ref={setRemoteVideo}
+                      autoPlay
+                      muted
+                      playsInline
+                      onLoadedMetadata={(e) => e.currentTarget.play().catch(() => {})}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1.5 left-2 bg-indigo-600/80 px-1.5 py-0.5 rounded text-[9px] font-bold">Partner</span>
                   </div>
                 </div>
               </div>
@@ -911,12 +951,12 @@ const GlobalCallManager = () => {
 
             {/* 3. Whiteboard Mode */}
             {callMode === "whiteboard" && (
-              <div className="flex flex-col md:flex-row gap-4 h-full">
+              <div className="flex flex-col md:flex-row gap-3 h-full min-h-0">
                 {/* Canvas Area */}
-                <div className="flex-1 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col overflow-hidden relative">
+                <div className="flex-1 min-h-0 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col overflow-hidden relative">
                   {/* Canvas Toolbar */}
-                  <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2">
+                  <div className="p-2 sm:p-3 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Palette:</span>
                       {["#6366f1", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4", "#ffffff"].map((c) => (
                         <button
@@ -953,29 +993,38 @@ const GlobalCallManager = () => {
                   <div className="flex-1 w-full min-h-0 relative cursor-crosshair overflow-hidden bg-slate-950">
                     <canvas
                       ref={canvasRef}
-                      width={1600}
-                      height={1000}
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
-                      className="w-full h-full bg-slate-950 touch-none block"
+                      onPointerDown={handlePointerDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
+                      className="absolute inset-0 w-full h-full bg-slate-950 touch-none block select-none"
                     />
                   </div>
                 </div>
 
-                {/* PiP Videos Side-panel */}
-                <div className="w-full md:w-56 flex md:flex-col gap-3">
+                {/* PiP Videos Side-panel on Desktop, or Compact Bottom Strip on Mobile */}
+                <div className="w-full md:w-56 flex md:flex-col gap-2 shrink-0 h-24 sm:h-28 md:h-auto">
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={setLocalVideo} autoPlay muted playsInline className="w-full h-full object-cover" />
-                    <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold">You</span>
+                    <video
+                      ref={setLocalVideo}
+                      autoPlay
+                      muted
+                      playsInline
+                      onLoadedMetadata={(e) => e.currentTarget.play().catch(() => {})}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1.5 left-2 bg-black/60 px-1.5 py-0.5 rounded text-[9px] font-bold">You</span>
                   </div>
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={setRemoteVideo} autoPlay playsInline className="w-full h-full object-cover" />
-                    <span className="absolute bottom-2 left-2 bg-indigo-600/80 px-2 py-0.5 rounded text-[9px] font-bold">Partner</span>
+                    <video
+                      ref={setRemoteVideo}
+                      autoPlay
+                      muted
+                      playsInline
+                      onLoadedMetadata={(e) => e.currentTarget.play().catch(() => {})}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1.5 left-2 bg-indigo-600/80 px-1.5 py-0.5 rounded text-[9px] font-bold">Partner</span>
                   </div>
                 </div>
               </div>

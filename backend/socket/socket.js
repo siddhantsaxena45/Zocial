@@ -42,7 +42,7 @@ const userSocketMap = new Map();
 
 export const getReciverId = (receiverId) => {
     if (!receiverId) return null;
-    const strId = receiverId.toString();
+    const strId = typeof receiverId === "object" && receiverId?._id ? receiverId._id.toString() : receiverId.toString();
     const sockets = userSocketMap.get(strId);
     if (sockets && sockets.size > 0) {
         // Return strId as room name so io.to(receiverSocketId) broadcasts to all user's active sockets
@@ -227,7 +227,8 @@ io.on("connection", (socket) => {
 
   // 🔄 Synergy Video Call Mode Sync (Video, Pair-Code, Whiteboard)
   socket.on("call_mode_change", ({ to, mode }) => {
-    const receiverSocketId = getReciverId(to);
+    const targetUserId = typeof to === "object" && to?._id ? to._id.toString() : (to ? to.toString() : null);
+    const receiverSocketId = getReciverId(targetUserId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("call_mode_update", {
         from: userId,
