@@ -5,6 +5,7 @@ export const authSlice = createSlice({
     name: "auth",
     initialState: {
         user: null,
+        isAuthChecked: false,
         suggestedUsers: [],
         userProfile: null,
         selectedUser: null
@@ -12,6 +13,10 @@ export const authSlice = createSlice({
     reducers: {
         setAuthUser: (state, action) => {
             state.user = action.payload;
+            state.isAuthChecked = true;
+        },
+        setAuthChecked: (state, action) => {
+            state.isAuthChecked = action.payload;
         },
         setSuggestedUsers: (state, action) => {
             state.suggestedUsers = action.payload;
@@ -39,6 +44,6 @@ export const authSlice = createSlice({
     },
 });
 
-export const { setAuthUser, setSuggestedUsers, setUserProfile, addUserPost, setSelectedUser, updateBookmarks,updateUserProfile } = authSlice.actions;
+export const { setAuthUser, setAuthChecked, setSuggestedUsers, setUserProfile, addUserPost, setSelectedUser, updateBookmarks, updateUserProfile } = authSlice.actions;
 
 export default authSlice.reducer;

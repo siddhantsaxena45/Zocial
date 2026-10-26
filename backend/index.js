@@ -35,10 +35,17 @@ const allowedOrigins = [
     rawClientUrl
 ].filter(Boolean);
 
+const isOriginAllowed = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    if (typeof origin === "string" && origin.endsWith(".vercel.app")) return true;
+    return false;
+};
+
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server) or in allowlist
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin, allowlisted origins, or any Vercel domain
+        if (isOriginAllowed(origin)) {
             callback(null, true);
         } else {
             console.warn(`[CORS Blocked] Origin: ${origin}`);

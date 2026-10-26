@@ -13,7 +13,7 @@ import { io } from "socket.io-client"
 import axios from "axios"
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setAuthUser } from "./redux/authSlice";
+import { setAuthUser, setAuthChecked } from "./redux/authSlice";
 import { setSocket } from "./redux/socketSlice"
 import { setOnlineUsers } from "./redux/chatSlice"
 import { setLikeNotification, setAllNotifications } from "./redux/rtnSlice"
@@ -27,29 +27,29 @@ import GlobalCallManager from "./components/GlobalCallManager";
 const browserRouter = createBrowserRouter([
   {
     path: "/",
-    element:<ProtectedRoutes> <MainLayout /></ProtectedRoutes>,
+    element: <ProtectedRoutes> <MainLayout /></ProtectedRoutes>,
     children: [
       {
         path: "/",
-        element:<Home />
+        element: <Home />
       }, {
         path: "/profile/:id",
-        element:  <Profile />
+        element: <Profile />
       }, {
         path: "/account/edit",
-        element:  <EditProfile />
+        element: <EditProfile />
       },
       {
         path: "/chat",
-        element:  <ChatPage />
+        element: <ChatPage />
       },
       {
         path: "/scout",
-        element:  <ZocialScout />
+        element: <ZocialScout />
       },
       {
         path: "/resume/:id",
-        element:  <ResumeGenerator />
+        element: <ResumeGenerator />
       }
     ]
   },
@@ -157,11 +157,11 @@ function App() {
 
   return (
     <>
-     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
         <RouterProvider router={browserRouter} />
         <GlobalCallManager />
-     </GoogleOAuthProvider>
-      
+      </GoogleOAuthProvider>
+
     </>
   )
 }

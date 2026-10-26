@@ -16,10 +16,17 @@ const allowedOrigins = [
     rawClientUrl
 ].filter(Boolean);
 
+const isOriginAllowed = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    if (typeof origin === "string" && origin.endsWith(".vercel.app")) return true;
+    return false;
+};
+
 const io = new Server(server, {
     cors: {
         origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin)) {
+            if (isOriginAllowed(origin)) {
                 callback(null, true);
             } else {
                 callback(new Error("Socket CORS rejected"));

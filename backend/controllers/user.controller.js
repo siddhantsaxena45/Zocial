@@ -41,7 +41,13 @@ export const register = async (req, res) => {
             email,
             password: hashedPassword,
         });
-        return res.status(200).json({ message: "User created successfully", success: true })
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "3650d" });
+        return res.cookie("token", token, {
+            httpOnly: true,
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 3650 * 24 * 60 * 60 * 1000
+        }).status(200).json({ message: "User created successfully", success: true, user: { _id: user._id, username: user.username, email: user.email } });
     }
     catch (error) {
         console.error("[Registration Error]", error);
@@ -66,7 +72,7 @@ export const login = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid credentials", success: false })
         }
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "3650d" });
         const populatedPost = await Promise.all(user.posts.map(async (postId) => {
             const post = await Post.findById(postId);
             if (post.author.equals(user._id)) {
@@ -90,7 +96,7 @@ export const login = async (req, res) => {
             httpOnly: true,
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             secure: process.env.NODE_ENV === "production",
-            maxAge: 30 * 24 * 60 * 60 * 1000
+            maxAge: 3650 * 24 * 60 * 60 * 1000 // 10 years (lifetime persistent browser session)
         }).status(200).json({ message: `${user.username} logged in successfully`, success: true, user });
 
 
@@ -424,7 +430,7 @@ export const googleLogin = async (req, res) => {
         }
 
         const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-            expiresIn: "1d",
+            expiresIn: "3650d",
         });
 
         const populatedPost = await Promise.all(user.posts.map(async (postId) => {
@@ -444,12 +450,12 @@ export const googleLogin = async (req, res) => {
             bookmarks: user.bookmarks,
         };
 
-        // 4. Send cookie
+        // 4. Send cookie (10 years / lifetime browser persistence)
         res.cookie("token", jwtToken, {
             httpOnly: true,
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             secure: process.env.NODE_ENV === "production",
-            maxAge: 30 * 24 * 60 * 60 * 1000,
+            maxAge: 3650 * 24 * 60 * 60 * 1000,
         })
             .status(200)
             .json({
