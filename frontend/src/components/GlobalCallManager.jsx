@@ -28,67 +28,129 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { setActiveCall, setIncomingCall, resetCall, toggleMute, toggleCamera } from "@/redux/callSlice";
 
-class RingtoneSynth {
-  constructor() {
-    this.ctx = null;
-    this.isPlaying = false;
-    this.timeout = null;
-    this.osc1 = null;
-    this.osc2 = null;
-    this.gain = null;
+class CallAudioFx {
+  static getAudioContext() {
+    if (!CallAudioFx.ctx || CallAudioFx.ctx.state === 'closed') {
+      CallAudioFx.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (CallAudioFx.ctx.state === 'suspended') {
+      CallAudioFx.ctx.resume().catch(() => {});
+    }
+    return CallAudioFx.ctx;
   }
-  
-  play() {
-    if (this.isPlaying) return Promise.resolve();
+
+  // 🔔 Melodic, Soothing Marimba Chime Ringtone (like modern iOS/Google Meet)
+  static startRingtone() {
+    CallAudioFx.stopRingtone();
     try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.gain = this.ctx.createGain();
-      this.gain.connect(this.ctx.destination);
-      this.gain.gain.value = 0;
-      
-      this.osc1 = this.ctx.createOscillator();
-      this.osc2 = this.ctx.createOscillator();
-      this.osc1.type = 'square';
-      this.osc2.type = 'square';
-      this.osc1.frequency.value = 440;
-      this.osc2.frequency.value = 480;
-      
-      this.osc1.connect(this.gain);
-      this.osc2.connect(this.gain);
-      this.osc1.start();
-      this.osc2.start();
-      
-      this.isPlaying = true;
-      
-      const ring = () => {
-        if (!this.isPlaying) return;
-        const now = this.ctx.currentTime;
-        this.gain.gain.setValueAtTime(0, now);
-        this.gain.gain.linearRampToValueAtTime(0.05, now + 0.05);
-        this.gain.gain.setValueAtTime(0.05, now + 1.5);
-        this.gain.gain.linearRampToValueAtTime(0, now + 1.6);
-        this.timeout = setTimeout(ring, 3000);
+      const ctx = CallAudioFx.getAudioContext();
+      CallAudioFx.ringtoneActive = true;
+
+      const playMelody = () => {
+        if (!CallAudioFx.ringtoneActive || !ctx || ctx.state === 'closed') return;
+        const now = ctx.currentTime;
+
+        // Elegant Pentatonic Chime: D5 (587Hz) -> F#5 (740Hz) -> A5 (880Hz) -> D6 (1175Hz)
+        const chime = [
+          { freq: 587.33, offset: 0.00, dur: 0.35, vol: 0.04 },
+          { freq: 739.99, offset: 0.12, dur: 0.35, vol: 0.045 },
+          { freq: 880.00, offset: 0.24, dur: 0.40, vol: 0.05 },
+          { freq: 1174.66, offset: 0.36, dur: 0.60, vol: 0.04 },
+          // Soft harmonic echo
+          { freq: 880.00, offset: 0.70, dur: 0.35, vol: 0.025 },
+          { freq: 1174.66, offset: 0.82, dur: 0.50, vol: 0.03 },
+        ];
+
+        chime.forEach(({ freq, offset, dur, vol }) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + offset);
+
+          gain.gain.setValueAtTime(0, now + offset);
+          gain.gain.linearRampToValueAtTime(vol, now + offset + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + dur);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + offset);
+          osc.stop(now + offset + dur + 0.05);
+        });
+
+        // Loop smoothly every 2.6 seconds
+        CallAudioFx.ringtoneTimeout = setTimeout(playMelody, 2600);
       };
-      ring();
-      return Promise.resolve();
-    } catch(e) {
-      console.warn("AudioContext blocked", e);
-      return Promise.reject(e);
+
+      playMelody();
+    } catch (e) {
+      console.warn("AudioContext ringtone error:", e);
     }
   }
 
-  pause() {
-    this.isPlaying = false;
-    clearTimeout(this.timeout);
-    if (this.gain && this.ctx) {
-      this.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
-      setTimeout(() => {
-        if (this.osc1) { this.osc1.stop(); this.osc1.disconnect(); }
-        if (this.osc2) { this.osc2.stop(); this.osc2.disconnect(); }
-        if (this.ctx) { this.ctx.close(); }
-        this.ctx = null;
-      }, 200);
+  static stopRingtone() {
+    CallAudioFx.ringtoneActive = false;
+    if (CallAudioFx.ringtoneTimeout) {
+      clearTimeout(CallAudioFx.ringtoneTimeout);
+      CallAudioFx.ringtoneTimeout = null;
     }
+  }
+
+  // 🟢 Call Picked / Connected: Bright Ascending Two-Tone Chime
+  static playCallConnected() {
+    CallAudioFx.stopRingtone();
+    try {
+      const ctx = CallAudioFx.getAudioContext();
+      const now = ctx.currentTime;
+      const notes = [
+        { freq: 659.25, offset: 0.00, dur: 0.18, vol: 0.05 }, // E5
+        { freq: 987.77, offset: 0.14, dur: 0.35, vol: 0.06 }  // B5
+      ];
+      notes.forEach(({ freq, offset, dur, vol }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + offset);
+
+        gain.gain.setValueAtTime(0, now + offset);
+        gain.gain.linearRampToValueAtTime(vol, now + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + dur);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + dur + 0.05);
+      });
+    } catch (e) {}
+  }
+
+  // 🔴 Call Ended / Cut: Soft Descending Chime
+  static playCallEnded() {
+    CallAudioFx.stopRingtone();
+    try {
+      const ctx = CallAudioFx.getAudioContext();
+      const now = ctx.currentTime;
+      const notes = [
+        { freq: 440.00, offset: 0.00, dur: 0.16, vol: 0.05 }, // A4
+        { freq: 329.63, offset: 0.14, dur: 0.30, vol: 0.04 }  // E4
+      ];
+      notes.forEach(({ freq, offset, dur, vol }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + offset);
+
+        gain.gain.setValueAtTime(0, now + offset);
+        gain.gain.linearRampToValueAtTime(vol, now + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + dur);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + dur + 0.05);
+      });
+    } catch (e) {}
   }
 }
 
@@ -139,7 +201,6 @@ const GlobalCallManager = () => {
   const remoteStream = useRef(null);
   const [remoteStreamState, setRemoteStreamState] = useState(null);
   const iceCandidatesBuffer = useRef([]);
-  const ringtoneAudio = useRef(null);
 
   const iceServers = {
     iceServers: [
@@ -211,9 +272,7 @@ const GlobalCallManager = () => {
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
 
-    if (ringtoneAudio.current) {
-      ringtoneAudio.current.pause();
-    }
+    CallAudioFx.playCallEnded();
 
     dispatch(resetCall());
     iceCandidatesBuffer.current = [];
@@ -406,6 +465,7 @@ const GlobalCallManager = () => {
       socket.emit("video-answer", { to: from, answer });
 
       setIsCallAccepted(true);
+      CallAudioFx.playCallConnected();
     } catch (err) {
       console.error("Error accepting call:", err);
       endCall(false);
@@ -447,6 +507,7 @@ const GlobalCallManager = () => {
   }, [callMode, activeCall, isCallAccepted, remoteStreamState]);
 
   const rejectCall = () => {
+    CallAudioFx.playCallEnded();
     if (callerInfo?.from) {
       if (socket) {
         socket.emit("call-rejected", { to: callerInfo.from });
@@ -489,6 +550,7 @@ const GlobalCallManager = () => {
           }
         }
         setIsCallAccepted(true);
+        CallAudioFx.playCallConnected();
       } catch (err) {
         console.error("Error handling video answer:", err);
       }
@@ -683,15 +745,14 @@ const GlobalCallManager = () => {
     }
 
     if (shouldRing) {
-      if (!ringtoneAudio.current) {
-        ringtoneAudio.current = new RingtoneSynth();
-      }
-      ringtoneAudio.current.play().catch(e => console.log("Audio autoplay blocked", e));
+      CallAudioFx.startRingtone();
     } else {
-      if (ringtoneAudio.current) {
-        ringtoneAudio.current.pause();
-      }
+      CallAudioFx.stopRingtone();
     }
+
+    return () => {
+      CallAudioFx.stopRingtone();
+    };
   }, [incomingCall, activeCall, isCallAccepted]);
 
   const getCanvasCoords = (e) => {
