@@ -10,7 +10,7 @@ import { Textarea } from "./ui/textarea";
 import { readFileAsDataURL } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { 
-  Loader2, Github, Globe, Tag, Users, DollarSign, 
+  Loader2, Github, Globe, Tag, Users, 
   ChevronDown, ChevronUp, ImagePlus, Sparkles, Code, FileCode,
   Search, X, Check 
 } from "lucide-react";
@@ -41,9 +41,6 @@ const CreatePost = ({ open, setOpen }) => {
   const [collabSearchResults, setCollabSearchResults] = useState([]);
   const [isSearchingCollab, setIsSearchingCollab] = useState(false);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
-  const [isBounty, setIsBounty] = useState(false);
-  const [bountyAmount, setBountyAmount] = useState("");
-  const [bountyType, setBountyType] = useState("service_offered");
 
   const { user } = useSelector(state => state.auth);
   const { posts } = useSelector(state => state.post);
@@ -114,11 +111,6 @@ const CreatePost = ({ open, setOpen }) => {
         formdata.append("collaboratorUsername", collaboratorUsername);
         formdata.append("collaboratorRole", collaboratorRole);
       }
-      if (isBounty) {
-        formdata.append("isBounty", "true");
-        formdata.append("bountyType", bountyType);
-        if (bountyAmount) formdata.append("bountyAmount", bountyAmount);
-      }
 
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/post/addpost`, formdata, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -143,11 +135,7 @@ const CreatePost = ({ open, setOpen }) => {
         setCollaboratorRole('Co-Developer');
         setSelectedCollaborator(null);
         setCollabSearch('');
-        setCollabSearchResults([]);
         setShowCollabDropdown(false);
-        setIsBounty(false);
-        setBountyAmount('');
-        setBountyType('service_offered');
         setShowArtifacts(false);
         setOpen(false);
       }
@@ -428,61 +416,6 @@ const CreatePost = ({ open, setOpen }) => {
                         )}
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-
-              {/* Freelance / Bounty Toggle */}
-              <div className="space-y-2 pt-1 border-t border-slate-200/60">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-semibold select-none text-xs">
-                    <input
-                      type="checkbox"
-                      checked={isBounty}
-                      onChange={(e) => setIsBounty(e.target.checked)}
-                      className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                    />
-                    <span>Mark as Deliverable / Open Bounty (100% Free)</span>
-                  </label>
-
-                  {isBounty && (
-                    <div className="flex items-center gap-1 bg-white rounded-lg px-2.5 py-1 border border-emerald-300 text-emerald-700 shadow-sm">
-                      <DollarSign className="h-3.5 w-3.5" />
-                      <input
-                        type="text"
-                        placeholder="Amount (e.g. $350)"
-                        value={bountyAmount}
-                        onChange={(e) => setBountyAmount(e.target.value)}
-                        className="w-24 bg-transparent outline-none text-xs font-black text-emerald-800"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {isBounty && (
-                  <div className="flex items-center gap-4 pl-6 text-[11px]">
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-600">
-                      <input
-                        type="radio"
-                        name="bountyType"
-                        value="service_offered"
-                        checked={bountyType === "service_offered"}
-                        onChange={() => setBountyType("service_offered")}
-                        className="accent-indigo-600"
-                      />
-                      <span>Offering Service (Deliverable)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-600">
-                      <input
-                        type="radio"
-                        name="bountyType"
-                        value="task_bounty"
-                        checked={bountyType === "task_bounty"}
-                        onChange={() => setBountyType("task_bounty")}
-                        className="accent-indigo-600"
-                      />
-                      <span>Seeking Solution (Reward)</span>
-                    </label>
                   </div>
                 )}
               </div>

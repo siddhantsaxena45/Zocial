@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { 
     Bookmark, MessageCircle, MoreHorizontal, Send, Zap, Users, TrendingUp, 
-    Github, ExternalLink, Sparkles, DollarSign, Handshake, Check, Copy, 
+    Github, ExternalLink, Sparkles, Handshake, Check, Copy, 
     Code, CheckCircle2, ShieldCheck, Play, Eye, ChevronDown, ChevronUp, Briefcase 
 } from 'lucide-react'
 
@@ -415,7 +415,7 @@ const handleShare = async (imageUrl) => {
                     </div>
 
                     {/* 🛠️ Proof-of-Work & Synergy Artifacts */}
-                    {(post.tags?.length > 0 || post.githubUrl || post.liveUrl || post.codeSnippet || post.collaboratorUsername || post.isBounty) && (
+                    {(post.tags?.length > 0 || post.githubUrl || post.liveUrl || post.codeSnippet || post.collaboratorUsername) && (
                         <div className="pt-2 pb-1 space-y-2 border-t border-slate-100/80">
                             {/* Tech Stack Tags */}
                             {post.tags && post.tags.length > 0 && (
@@ -527,31 +527,6 @@ const handleShare = async (imageUrl) => {
                                     <pre className="p-3 text-[11px] font-mono text-slate-200 overflow-x-auto max-h-56 leading-relaxed">
                                         <code>{post.codeSnippet}</code>
                                     </pre>
-                                </div>
-                            )}
-
-                            {/* Micro-Gig / Bounty Card */}
-                            {post.isBounty && (
-                                <div className="flex items-center justify-between w-full p-2.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl mt-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800">
-                                            <DollarSign className="h-4 w-4" />
-                                        </span>
-                                        <div>
-                                            <p className="text-[11px] font-black uppercase tracking-wide text-emerald-900">
-                                                {post.bountyType === 'task_bounty' ? 'Open Task Bounty' : 'Micro-Gig Deliverable'}
-                                            </p>
-                                            {post.bountyAmount && (
-                                                <p className="text-[10px] font-bold text-emerald-700">Budget / Reward: {post.bountyAmount}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => navigate('/chat')}
-                                        className="text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-sm"
-                                    >
-                                        {post.bountyType === 'task_bounty' ? 'Claim Bounty' : 'Commission Deliverable'}
-                                    </button>
                                 </div>
                             )}
                         </div>

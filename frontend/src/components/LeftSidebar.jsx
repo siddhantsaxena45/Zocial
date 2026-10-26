@@ -6,7 +6,6 @@ import {
   PlusSquare,
   Search,
   Users,
-  Briefcase,
   Sparkles,
   Compass,
 } from 'lucide-react';
@@ -48,7 +47,6 @@ const LeftSidebar = () => {
   const isItemActive = (itemText) => {
     if (itemText === 'Home') return location.pathname === '/';
     if (itemText === 'Zocial Scout') return location.pathname === '/scout';
-    if (itemText === 'Bounties') return location.pathname === '/bounties';
     if (itemText === 'Messages') return location.pathname === '/chat';
     if (itemText === 'Profile') return location.pathname === `/profile/${user?._id}`;
     return false;
@@ -63,7 +61,6 @@ const LeftSidebar = () => {
     { icon: <Home />, text: 'Home' },
     { icon: <Search />, text: 'Search' },
     { icon: <Compass />, text: 'Zocial Scout' },
-    { icon: <Briefcase />, text: 'Bounties' },
     { icon: <Sparkles className="text-indigo-600" />, text: 'AI Job-Fit' },
     { icon: <Bell />, text: 'Notifications' },
     { icon: <Users />, text: 'Synergy' },
@@ -121,9 +118,6 @@ const LeftSidebar = () => {
     }
     else if (text === "Messages") {
       navigate("/chat");
-    }
-    else if (text === "Bounties") {
-      navigate("/bounties");
     }
     else if (text === "Zocial Scout") {
       navigate("/scout");
@@ -252,16 +246,6 @@ const LeftSidebar = () => {
             }`}
           >
             <Compass className="h-3.5 w-3.5" /> Scout Engine
-          </button>
-          <button 
-            onClick={() => navigate("/bounties")} 
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all shadow-sm ${
-              location.pathname === "/bounties" 
-                ? "bg-emerald-600 text-white shadow-emerald-500/25" 
-                : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60"
-            }`}
-          >
-            <Briefcase className="h-3.5 w-3.5" /> Bounties & Gigs
           </button>
           <button 
             onClick={() => setJobFitOpen(true)} 
