@@ -38,8 +38,8 @@ const LeftSidebar = () => {
   const { messages } = useSelector(state => state.messageNotification);
   const unseenMessagesCount = messages.filter(m => !m.seen).length;
   
-  // Filter notifications for the bell (Post engagements + Connection Acceptances + Collaborations)
-  const bellNotifications = likeNotification.filter(n => ['like', 'comment', 'connectionAccepted', 'synergyTag', 'vouchAccepted'].includes(n.type));
+  // Filter notifications for the bell (Post engagements + Connection Acceptances + Collaborations + Missed Calls)
+  const bellNotifications = likeNotification.filter(n => ['like', 'comment', 'connectionAccepted', 'synergyTag', 'vouchAccepted', 'missedCall'].includes(n.type));
   const unseenNotificationsCount = bellNotifications.filter(n => !n.seen).length;
 
   const isItemActive = (itemText) => {
@@ -116,7 +116,7 @@ const LeftSidebar = () => {
     else if (text === "Messages") {
       navigate("/chat");
     }
-    else if (text === "Zocial Scout") {
+    else if (text === "Scout") {
       navigate("/scout");
     }
 
