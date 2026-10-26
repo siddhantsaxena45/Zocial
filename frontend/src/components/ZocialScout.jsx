@@ -35,7 +35,6 @@ const ZocialScout = () => {
   const [semanticQuery, setSemanticQuery] = useState("");
   const [skillsQuery, setSkillsQuery] = useState("");
   const [roleQuery, setRoleQuery] = useState("");
-  const [openOnly, setOpenOnly] = useState(false);
   const [isJDModeActive, setIsJDModeActive] = useState(false);
 
   const navigate = useNavigate();
@@ -53,8 +52,7 @@ const ZocialScout = () => {
         jd: isJD ? jdToUse.trim() : "",
         query: activeMode === "scope" ? (overrideParams.query !== undefined ? overrideParams.query : semanticQuery).trim() : "",
         skills: (overrideParams.skills !== undefined ? overrideParams.skills : skillsQuery).trim(),
-        role: (overrideParams.role !== undefined ? overrideParams.role : roleQuery).trim(),
-        openOnly: (overrideParams.openOnly !== undefined ? overrideParams.openOnly : openOnly) ? "true" : "false"
+        role: (overrideParams.role !== undefined ? overrideParams.role : roleQuery).trim()
       };
 
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/scout`, payload, {
@@ -75,7 +73,7 @@ const ZocialScout = () => {
 
   useEffect(() => {
     searchCandidates();
-  }, [openOnly]);
+  }, []);
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
@@ -95,9 +93,8 @@ const ZocialScout = () => {
     setSemanticQuery("");
     setSkillsQuery("");
     setRoleQuery("");
-    setOpenOnly(false);
     setIsJDModeActive(false);
-    searchCandidates({ mode: "jd", jd: "", query: "", skills: "", role: "", openOnly: false });
+    searchCandidates({ mode: "jd", jd: "", query: "", skills: "", role: "" });
   };
 
   const startChatWithCandidate = (candidate) => {
@@ -136,7 +133,7 @@ const ZocialScout = () => {
           <div className="relative z-10 max-w-3xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-black uppercase tracking-wider backdrop-blur-md">
               <Target className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
-              Zocial Scout • AI Job-Fit ATS Recruiter Suite
+              Scout • AI Job-Fit ATS Recruiter Suite
             </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
               Paste JD & Rank Builders by <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-300 bg-clip-text text-transparent">Top ATS Score</span>
@@ -311,24 +308,8 @@ const ZocialScout = () => {
             </div>
           )}
 
-          {/* Sourcing Availability Toggle & Count */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <label className="relative flex items-center cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={openOnly}
-                  onChange={(e) => setOpenOnly(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                <span className="ml-2 text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  Open to Opportunities / Gigs Only
-                </span>
-              </label>
-            </div>
-
+          {/* Builder Count */}
+          <div className="flex items-center justify-end pt-3 border-t border-slate-100 flex-wrap gap-2">
             <div className="text-xs font-bold text-slate-500">
               Found <span className="text-indigo-600 font-black">{visibleCandidates.length}</span> {isFilterActive ? "Matching Candidates" : "Verified Builders"}
             </div>

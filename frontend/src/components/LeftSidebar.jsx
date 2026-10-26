@@ -44,7 +44,7 @@ const LeftSidebar = () => {
 
   const isItemActive = (itemText) => {
     if (itemText === 'Home') return location.pathname === '/';
-    if (itemText === 'Zocial Scout') return location.pathname === '/scout';
+    if (itemText === 'Scout') return location.pathname === '/scout';
     if (itemText === 'Messages') return location.pathname === '/chat';
     if (itemText === 'Profile') return location.pathname === `/profile/${user?._id}`;
     return false;

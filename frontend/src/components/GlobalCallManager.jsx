@@ -130,9 +130,16 @@ const GlobalCallManager = () => {
   };
 
   const endCall = (shouldNotifyOther = true) => {
-    if (shouldNotifyOther && socket && (selectedUser?._id || callerInfo?.from)) {
-      const targetUserId = selectedUser?._id || callerInfo?.from;
+    const targetUserId = selectedUser?._id || callerInfo?.from;
+
+    if (shouldNotifyOther && socket && targetUserId) {
       socket.emit("call-ended", { to: targetUserId });
+
+      // If caller ended before recipient accepted, record missed call for recipient
+      if (!isCallAccepted && activeCall && !incomingCall) {
+        socket.emit("missed-call", { to: targetUserId });
+        axios.post(`${import.meta.env.VITE_API_URL}/notification/missed-call/${targetUserId}`, {}, { withCredentials: true }).catch(() => {});
+      }
     }
 
     if (peerConnection.current) {
@@ -231,7 +238,14 @@ const GlobalCallManager = () => {
   };
 
   const rejectCall = () => {
-    if (callerInfo?.from && socket) socket.emit("call-rejected", { to: callerInfo.from });
+    if (callerInfo?.from) {
+      if (socket) {
+        socket.emit("call-rejected", { to: callerInfo.from });
+      }
+      if (loggedInUser?._id) {
+        axios.post(`${import.meta.env.VITE_API_URL}/notification/missed-call/${loggedInUser._id}`, {}, { withCredentials: true }).catch(() => {});
+      }
+    }
     dispatch(resetCall());
   };
 
@@ -296,8 +310,24 @@ const GlobalCallManager = () => {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
 
+    const handleCallEnded = () => {
+      if (incomingCall && !isCallAccepted) {
+        toast.info(`Missed call from @${callerInfo?.userDetails?.username || 'collaborator'}`);
+      } else {
+        toast.info("Call ended");
+      }
+      endCall(false);
+    };
+
+    const handleCallRejected = () => {
+      toast.info("Call declined");
+      endCall(false);
+    };
+
     socket.on("video-answer", handleVideoAnswer);
     socket.on("ice-candidate", handleIceCandidate);
+    socket.on("call-ended", handleCallEnded);
+    socket.on("call-rejected", handleCallRejected);
     socket.on("pair_code_update", handlePairCodeUpdate);
     socket.on("whiteboard_draw_update", handleWhiteboardDraw);
     socket.on("whiteboard_cleared", handleWhiteboardClear);
@@ -305,6 +335,8 @@ const GlobalCallManager = () => {
     return () => {
       socket.off("video-answer", handleVideoAnswer);
       socket.off("ice-candidate", handleIceCandidate);
+      socket.off("call-ended", handleCallEnded);
+      socket.off("call-rejected", handleCallRejected);
       socket.off("pair_code_update", handlePairCodeUpdate);
       socket.off("whiteboard_draw_update", handleWhiteboardDraw);
       socket.off("whiteboard_cleared", handleWhiteboardClear);

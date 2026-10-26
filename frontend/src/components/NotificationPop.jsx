@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { FaHeart, FaComment } from "react-icons/fa";
-import { UserPlus, UserMinus, UserCheck, Network, Handshake, ShieldCheck } from "lucide-react"; // Verified dependency
+import { UserPlus, UserMinus, UserCheck, Network, Handshake, ShieldCheck, PhoneMissed, Video } from "lucide-react"; // Verified dependency
 import axios from "axios";
 import { markAllNotificationsSeen } from "@/redux/rtnSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,6 +14,7 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
   const { posts } = useSelector(state => state.post);
 
   const handleNotificationClick = (postId) => {
+    if (!postId) return;
     const post = posts.find(p => p._id === postId);
     if (post) {
       dispatch(setSelectedPost(post));
@@ -21,8 +22,8 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
     }
   };
 
-  // Filter out non-bell notifications (Keep likes, comments, and connection acceptances)
-  const filteredNotifications = likeNotification.filter(n => ['like', 'comment', 'connectionAccepted'].includes(n.type));
+  // Filter out non-bell notifications (Keep likes, comments, connection acceptances, and missed video calls)
+  const filteredNotifications = likeNotification.filter(n => ['like', 'comment', 'connectionAccepted', 'missedCall'].includes(n.type));
 
   return (
     <Popover

@@ -214,7 +214,7 @@ const SynergyRequests = ({ open, setOpen }) => {
                                     No Pending Outgoing Requests
                                 </p>
                                 <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                                    You have no sent requests waiting for a response. Visit profiles or Zocial Scout to connect with builders.
+                                    You have no sent requests waiting for a response. Visit profiles or Scout to connect with builders.
                                 </p>
                             </div>
                         ) : (
