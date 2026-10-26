@@ -3,6 +3,7 @@ import express from "express";
 import http from "http";
 import { User } from "../models/user.model.js";
 import { Notification } from "../models/notification.model.js";
+import { ConnectionRequest } from "../models/connectionRequest.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -54,14 +55,48 @@ io.on("connection", (socket) => {
   });
 
   // Video offer
-  socket.on("video-offer", ({ to, offer, userDetails }) => {
-    const receiverSocketId = getReciverId(to);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("video-offer", {
-        from: userId,
-        offer,
-        userDetails,
-      });
+  socket.on("video-offer", async ({ to, offer, userDetails }) => {
+    try {
+      if (!userId || !to) return;
+
+      // Ensure caller and recipient are connected
+      const [callerUser, receiverUser] = await Promise.all([
+        User.findById(userId).select("following"),
+        User.findById(to).select("following")
+      ]);
+
+      const isMutualFollow =
+        callerUser?.following?.some((id) => id.toString() === to.toString()) &&
+        receiverUser?.following?.some((id) => id.toString() === userId.toString());
+
+      let isConnected = Boolean(isMutualFollow);
+      if (!isConnected) {
+        const accepted = await ConnectionRequest.findOne({
+          $or: [
+            { sender: userId, receiver: to, status: "accepted" },
+            { sender: to, receiver: userId, status: "accepted" }
+          ]
+        });
+        isConnected = Boolean(accepted);
+      }
+
+      if (!isConnected) {
+        socket.emit("call-error", {
+          message: "Video calls are only allowed between connected builders. Establish synergy first!"
+        });
+        return;
+      }
+
+      const receiverSocketId = getReciverId(to);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("video-offer", {
+          from: userId,
+          offer,
+          userDetails,
+        });
+      }
+    } catch (err) {
+      console.error("video-offer authorization error:", err);
     }
   });
 
