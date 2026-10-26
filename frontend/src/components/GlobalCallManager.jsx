@@ -114,11 +114,14 @@ const GlobalCallManager = () => {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
+  const whiteboardHistory = useRef([]);
+  const callPartnerId = useRef(null);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
   const localStream = useRef(null);
+  const remoteStream = useRef(null);
   const iceCandidatesBuffer = useRef([]);
   const ringtoneAudio = useRef(null);
 
@@ -130,7 +133,7 @@ const GlobalCallManager = () => {
   };
 
   const endCall = (shouldNotifyOther = true) => {
-    const targetUserId = selectedUser?._id || callerInfo?.from;
+    const targetUserId = callPartnerId.current || selectedUser?._id || callerInfo?.from;
 
     if (shouldNotifyOther && socket && targetUserId) {
       socket.emit("call-ended", { to: targetUserId });
@@ -152,6 +155,10 @@ const GlobalCallManager = () => {
       localStream.current = null;
     }
 
+    remoteStream.current = null;
+    callPartnerId.current = null;
+    whiteboardHistory.current = [];
+
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
@@ -167,6 +174,8 @@ const GlobalCallManager = () => {
       toast.error("Please open a conversation to start video call");
       return;
     }
+
+    callPartnerId.current = target._id;
 
     // Verify mutual connection before establishing video call
     const isMutualFollow =
@@ -198,7 +207,10 @@ const GlobalCallManager = () => {
       localStream.current.getTracks().forEach((track) => pc.addTrack(track, localStream.current));
 
       pc.ontrack = (e) => {
-        if (remoteVideoRef.current && e.streams[0]) remoteVideoRef.current.srcObject = e.streams[0];
+        if (e.streams[0]) {
+          remoteStream.current = e.streams[0];
+          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
+        }
       };
 
       pc.onicecandidate = (e) => {
@@ -226,6 +238,7 @@ const GlobalCallManager = () => {
     dispatch(setActiveCall(true));
     try {
       const { from, offer } = callerInfo;
+      callPartnerId.current = from;
       localStream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
       if (localVideoRef.current) localVideoRef.current.srcObject = localStream.current;
 
@@ -233,7 +246,10 @@ const GlobalCallManager = () => {
       localStream.current.getTracks().forEach((track) => pc.addTrack(track, localStream.current));
 
       pc.ontrack = (e) => {
-        if (remoteVideoRef.current && e.streams[0]) remoteVideoRef.current.srcObject = e.streams[0];
+        if (e.streams[0]) {
+          remoteStream.current = e.streams[0];
+          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
+        }
       };
 
       pc.onicecandidate = (e) => {
@@ -257,6 +273,16 @@ const GlobalCallManager = () => {
       endCall(false);
     }
   };
+
+  // Re-attach video stream elements whenever switching modes or opening call dialog
+  useEffect(() => {
+    if (localVideoRef.current && localStream.current) {
+      localVideoRef.current.srcObject = localStream.current;
+    }
+    if (remoteVideoRef.current && remoteStream.current) {
+      remoteVideoRef.current.srcObject = remoteStream.current;
+    }
+  }, [callMode, activeCall]);
 
   const rejectCall = () => {
     if (callerInfo?.from) {
@@ -310,25 +336,31 @@ const GlobalCallManager = () => {
     };
 
     const handleWhiteboardDraw = ({ drawData }) => {
+      whiteboardHistory.current.push(drawData);
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
-      ctx.beginPath();
-      ctx.moveTo(drawData.prevX, drawData.prevY);
-      ctx.lineTo(drawData.currX, drawData.currY);
-      ctx.strokeStyle = drawData.isEraser ? "#020617" : drawData.color;
-      ctx.lineWidth = drawData.isEraser ? drawData.size * 4 : drawData.size;
-      ctx.lineCap = "round";
-      ctx.stroke();
-      ctx.closePath();
+      drawStrokeOnCanvas(ctx, drawData);
     };
 
     const handleWhiteboardClear = () => {
+      whiteboardHistory.current = [];
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const handleCallModeUpdate = ({ mode }) => {
+      if (mode) {
+        setCallMode(mode);
+        const modeLabel = 
+          mode === "whiteboard" ? "Whiteboard" :
+          mode === "pair_code" ? "Pair Programming" :
+          "Video Feed";
+        toast.info(`Partner switched to ${modeLabel}`);
+      }
     };
 
     const handleCallEnded = () => {
@@ -358,6 +390,7 @@ const GlobalCallManager = () => {
     socket.on("pair_code_update", handlePairCodeUpdate);
     socket.on("whiteboard_draw_update", handleWhiteboardDraw);
     socket.on("whiteboard_cleared", handleWhiteboardClear);
+    socket.on("call_mode_update", handleCallModeUpdate);
 
     return () => {
       socket.off("video-answer", handleVideoAnswer);
@@ -368,8 +401,54 @@ const GlobalCallManager = () => {
       socket.off("pair_code_update", handlePairCodeUpdate);
       socket.off("whiteboard_draw_update", handleWhiteboardDraw);
       socket.off("whiteboard_cleared", handleWhiteboardClear);
+      socket.off("call_mode_update", handleCallModeUpdate);
     };
   }, [socket]);
+
+  const drawStrokeOnCanvas = (ctx, stroke) => {
+    ctx.beginPath();
+    ctx.moveTo(stroke.prevX, stroke.prevY);
+    ctx.lineTo(stroke.currX, stroke.currY);
+    ctx.strokeStyle = stroke.isEraser ? "#020617" : stroke.color;
+    ctx.lineWidth = stroke.isEraser ? stroke.size * 4 : stroke.size;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    ctx.closePath();
+  };
+
+  const redrawWhiteboard = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    whiteboardHistory.current.forEach((stroke) => {
+      drawStrokeOnCanvas(ctx, stroke);
+    });
+  };
+
+  useEffect(() => {
+    if (callMode === "whiteboard") {
+      requestAnimationFrame(() => {
+        redrawWhiteboard();
+      });
+    }
+  }, [callMode]);
+
+  const switchCallMode = (newMode, emitEvent = true) => {
+    setCallMode(newMode);
+    if (emitEvent) {
+      const targetId = callPartnerId.current || callerInfo?.from || selectedUser?._id;
+      if (targetId && socket) {
+        socket.emit("call_mode_change", {
+          to: targetId,
+          mode: newMode
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     const handleInitiate = (e) => {
@@ -407,44 +486,47 @@ const GlobalCallManager = () => {
     }
   }, [incomingCall, activeCall, isCallAccepted]);
 
-  const startDrawing = (e) => {
+  const getCanvasCoords = (e) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    isDrawing.current = true;
-    lastPos.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+    const isTouchEvent = e.touches && e.touches.length > 0;
+    const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
+    return {
+      x: Math.max(0, Math.min(canvas.width, (clientX - rect.left) * scaleX)),
+      y: Math.max(0, Math.min(canvas.height, (clientY - rect.top) * scaleY))
     };
+  };
+
+  const startDrawing = (e) => {
+    isDrawing.current = true;
+    lastPos.current = getCanvasCoords(e);
   };
 
   const draw = (e) => {
     if (!isDrawing.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const currX = e.clientX - rect.left;
-    const currY = e.clientY - rect.top;
+    const { x: currX, y: currY } = getCanvasCoords(e);
     const prevX = lastPos.current.x;
     const prevY = lastPos.current.y;
 
+    const stroke = { prevX, prevY, currX, currY, color: brushColor, size: brushSize, isEraser };
+    whiteboardHistory.current.push(stroke);
+
     const ctx = canvas.getContext("2d");
-    ctx.beginPath();
-    ctx.moveTo(prevX, prevY);
-    ctx.lineTo(currX, currY);
-    ctx.strokeStyle = isEraser ? "#020617" : brushColor;
-    ctx.lineWidth = isEraser ? brushSize * 4 : brushSize;
-    ctx.lineCap = "round";
-    ctx.stroke();
-    ctx.closePath();
+    drawStrokeOnCanvas(ctx, stroke);
 
     lastPos.current = { x: currX, y: currY };
 
-    const targetId = callerInfo?.from || selectedUser?._id;
+    const targetId = callPartnerId.current || callerInfo?.from || selectedUser?._id;
     if (targetId && socket) {
       socket.emit("whiteboard_draw", {
         to: targetId,
-        drawData: { prevX, prevY, currX, currY, color: brushColor, size: brushSize, isEraser }
+        drawData: stroke
       });
     }
   };
@@ -454,13 +536,15 @@ const GlobalCallManager = () => {
   };
 
   const clearCanvas = () => {
+    whiteboardHistory.current = [];
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#020617";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-    const targetId = callerInfo?.from || selectedUser?._id;
+    const targetId = callPartnerId.current || callerInfo?.from || selectedUser?._id;
     if (targetId && socket) {
       socket.emit("whiteboard_clear", { to: targetId });
     }
@@ -519,7 +603,7 @@ const GlobalCallManager = () => {
             {/* Mode Switcher Tabs */}
             <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px] font-bold overflow-x-auto max-w-full">
               <button
-                onClick={() => setCallMode("video")}
+                onClick={() => switchCallMode("video")}
                 className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ${
                   callMode === "video" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                 }`}
@@ -527,7 +611,7 @@ const GlobalCallManager = () => {
                 <VideoIcon className="h-3.5 w-3.5" /> Video Feed
               </button>
               <button
-                onClick={() => setCallMode("pair_code")}
+                onClick={() => switchCallMode("pair_code")}
                 className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ${
                   callMode === "pair_code" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                 }`}
@@ -535,7 +619,7 @@ const GlobalCallManager = () => {
                 <Code className="h-3.5 w-3.5" /> Pair Code
               </button>
               <button
-                onClick={() => setCallMode("whiteboard")}
+                onClick={() => switchCallMode("whiteboard")}
                 className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ${
                   callMode === "whiteboard" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                 }`}
@@ -663,16 +747,19 @@ const GlobalCallManager = () => {
                   </div>
 
                   {/* HTML5 Canvas */}
-                  <div className="flex-1 w-full h-full relative cursor-crosshair overflow-hidden">
+                  <div className="flex-1 w-full min-h-0 relative cursor-crosshair overflow-hidden bg-slate-950">
                     <canvas
                       ref={canvasRef}
-                      width={800}
-                      height={500}
+                      width={1600}
+                      height={1000}
                       onMouseDown={startDrawing}
                       onMouseMove={draw}
                       onMouseUp={stopDrawing}
                       onMouseLeave={stopDrawing}
-                      className="w-full h-full bg-slate-950"
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                      className="w-full h-full bg-slate-950 touch-none block"
                     />
                   </div>
                 </div>
