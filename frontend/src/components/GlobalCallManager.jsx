@@ -209,6 +209,27 @@ const GlobalCallManager = () => {
     setCallMode("video");
   };
 
+  const setLocalVideo = (el) => {
+    localVideoRef.current = el;
+    if (el && localStream.current) {
+      if (el.srcObject !== localStream.current) {
+        el.srcObject = localStream.current;
+      }
+      el.play().catch(() => {});
+    }
+  };
+
+  const setRemoteVideo = (el) => {
+    remoteVideoRef.current = el;
+    const currentRemote = remoteStream.current || remoteStreamState;
+    if (el && currentRemote) {
+      if (el.srcObject !== currentRemote) {
+        el.srcObject = currentRemote;
+      }
+      el.play().catch(() => {});
+    }
+  };
+
   const setupPeerConnectionEvents = (pc) => {
     pc.onconnectionstatechange = () => {
       console.log("WebRTC connectionState:", pc.connectionState);
@@ -227,24 +248,29 @@ const GlobalCallManager = () => {
     };
 
     pc.ontrack = (e) => {
-      console.log("WebRTC ontrack event received:", e);
-      let stream = e.streams && e.streams[0];
-      if (!stream) {
-        if (!remoteStream.current) {
-          remoteStream.current = new MediaStream();
-        }
-        if (e.track) {
+      console.log("WebRTC ontrack event received track kind:", e.track?.kind);
+      if (!remoteStream.current) {
+        remoteStream.current = new MediaStream();
+      }
+      if (e.streams && e.streams[0]) {
+        e.streams[0].getTracks().forEach((track) => {
+          if (!remoteStream.current.getTracks().some((t) => t.id === track.id)) {
+            remoteStream.current.addTrack(track);
+          }
+        });
+      } else if (e.track) {
+        if (!remoteStream.current.getTracks().some((t) => t.id === e.track.id)) {
           remoteStream.current.addTrack(e.track);
         }
-        stream = remoteStream.current;
-      } else {
-        remoteStream.current = stream;
       }
 
-      setRemoteStreamState(stream);
+      // Always instantiate fresh MediaStream instance with all tracks so React detects state change
+      const freshStream = new MediaStream(remoteStream.current.getTracks());
+      remoteStream.current = freshStream;
+      setRemoteStreamState(freshStream);
 
       if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.srcObject = freshStream;
         remoteVideoRef.current.play().catch(() => {});
       }
     };
@@ -535,9 +561,19 @@ const GlobalCallManager = () => {
   }, [socket]);
 
   const drawStrokeOnCanvas = (ctx, stroke) => {
+    const canvas = ctx.canvas;
+    const w = canvas.width;
+    const h = canvas.height;
+
     ctx.beginPath();
-    ctx.moveTo(stroke.prevX, stroke.prevY);
-    ctx.lineTo(stroke.currX, stroke.currY);
+    // Normalize coordinates so strokes span 100% of the canvas height and width on all devices
+    const prevX = stroke.prevX <= 1 ? stroke.prevX * w : stroke.prevX;
+    const prevY = stroke.prevY <= 1 ? stroke.prevY * h : stroke.prevY;
+    const currX = stroke.currX <= 1 ? stroke.currX * w : stroke.currX;
+    const currY = stroke.currY <= 1 ? stroke.currY * h : stroke.currY;
+
+    ctx.moveTo(prevX, prevY);
+    ctx.lineTo(currX, currY);
     ctx.strokeStyle = stroke.isEraser ? "#020617" : stroke.color;
     ctx.lineWidth = stroke.isEraser ? stroke.size * 4 : stroke.size;
     ctx.lineCap = "round";
@@ -622,12 +658,10 @@ const GlobalCallManager = () => {
     const isTouchEvent = e.touches && e.touches.length > 0;
     const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
     const clientY = isTouchEvent ? e.touches[0].clientY : e.clientY;
-    const scaleX = canvas.width / (rect.width || 1);
-    const scaleY = canvas.height / (rect.height || 1);
-    return {
-      x: Math.max(0, Math.min(canvas.width, (clientX - rect.left) * scaleX)),
-      y: Math.max(0, Math.min(canvas.height, (clientY - rect.top) * scaleY))
-    };
+
+    const normX = Math.max(0, Math.min(1, (clientX - rect.left) / (rect.width || 1)));
+    const normY = Math.max(0, Math.min(1, (clientY - rect.top) / (rect.height || 1)));
+    return { x: normX, y: normY };
   };
 
   const startDrawing = (e) => {
@@ -765,13 +799,13 @@ const GlobalCallManager = () => {
             {callMode === "video" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
                 <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
-                  <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                  <video ref={setLocalVideo} autoPlay muted playsInline className="w-full h-full object-cover" />
                   <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white">
                     You ({loggedInUser?.username})
                   </span>
                 </div>
                 <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
-                  <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                  <video ref={setRemoteVideo} autoPlay playsInline className="w-full h-full object-cover" />
                   <span className="absolute bottom-3 left-3 bg-indigo-600/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white">
                     Partner ({selectedUser?.username || "Collaborator"})
                   </span>
@@ -817,18 +851,18 @@ const GlobalCallManager = () => {
                     value={pairCode}
                     onChange={handleCodeChange}
                     className="flex-1 w-full p-4 bg-slate-950 text-emerald-400 font-mono text-xs leading-relaxed outline-none resize-none border-none selection:bg-indigo-600 selection:text-white"
-                    placeholder="// Start typing code collaboratively..."
+                    placeholder="Start typing code collaboratively..."
                   />
                 </div>
 
                 {/* PiP Videos Side-panel */}
                 <div className="w-full md:w-56 flex md:flex-col gap-3">
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                    <video ref={setLocalVideo} autoPlay muted playsInline className="w-full h-full object-cover" />
                     <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold">You</span>
                   </div>
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    <video ref={setRemoteVideo} autoPlay playsInline className="w-full h-full object-cover" />
                     <span className="absolute bottom-2 left-2 bg-indigo-600/80 px-2 py-0.5 rounded text-[9px] font-bold">Partner</span>
                   </div>
                 </div>
@@ -896,11 +930,11 @@ const GlobalCallManager = () => {
                 {/* PiP Videos Side-panel */}
                 <div className="w-full md:w-56 flex md:flex-col gap-3">
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                    <video ref={setLocalVideo} autoPlay muted playsInline className="w-full h-full object-cover" />
                     <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold">You</span>
                   </div>
                   <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
-                    <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    <video ref={setRemoteVideo} autoPlay playsInline className="w-full h-full object-cover" />
                     <span className="absolute bottom-2 left-2 bg-indigo-600/80 px-2 py-0.5 rounded text-[9px] font-bold">Partner</span>
                   </div>
                 </div>
