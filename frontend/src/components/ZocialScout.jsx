@@ -122,166 +122,79 @@ const ZocialScout = () => {
         {/* Sourcing & Job-Fit Console */}
         <div className="glass-card rounded-3xl p-5 sm:p-7 border border-white/80 shadow-xl shadow-indigo-950/5 space-y-6">
           
-          {/* Mode Selector Tabs */}
+          {/* Console Header */}
           <div className="flex items-center justify-between border-b border-slate-200/70 pb-4 flex-wrap gap-3">
-            <div className="flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setSearchMode("jd")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                  searchMode === "jd"
-                    ? "bg-white text-indigo-700 shadow-sm shadow-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Target className="h-4 w-4 text-indigo-600" />
-                <span>AI Job-Fit Matcher (Paste JD)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSearchMode("scope")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                  searchMode === "scope"
-                    ? "bg-white text-indigo-700 shadow-sm shadow-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Search className="h-4 w-4 text-indigo-600" />
-                <span>Quick Scope & Stack Filter</span>
-              </button>
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-purple-100 text-purple-700">
+                <Target className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-900 tracking-tight">AI Job-Fit Matcher</h3>
+                <p className="text-[11px] text-slate-500 font-medium">Paste JD or technical role requirements to rank candidates by ATS score</p>
+              </div>
             </div>
 
             {isFilterActive && (
               <button
+                type="button"
                 onClick={clearFilters}
                 className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 transition-colors"
               >
-                <X className="h-3.5 w-3.5" /> Clear Filters
+                <X className="h-3.5 w-3.5" /> Clear JD
               </button>
             )}
           </div>
 
-          {/* TAB 1: AI Job-Fit Scanner (Paste JD) */}
-          {searchMode === "jd" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                  <Target className="h-4 w-4 text-purple-600" />
-                  Paste Target Job Description (JD) or Role Specifications
-                </label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold text-slate-400">Quick Samples:</span>
-                  {SAMPLE_JDS.map((sample, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleApplySampleJD(sample.jd)}
-                      className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg transition-colors"
-                    >
-                      {sample.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="relative">
-                <textarea
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Paste complete Job Description (JD) or technical requirements here... e.g. We are looking for a Full-Stack Engineer with React, Node.js, PostgreSQL, Docker, and experience with cloud microservices..."
-                  rows={4}
-                  className="w-full bg-white border border-purple-200/90 rounded-2xl p-4 text-xs sm:text-sm font-medium text-slate-800 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-slate-400 shadow-sm leading-relaxed"
-                />
-              </div>
-
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="text-[11px] text-slate-400 font-medium">
-                  {jobDescription.trim().length > 0 ? (
-                    <span>{jobDescription.trim().length} characters • Ready for Gemini ATS evaluation</span>
-                  ) : (
-                    <span>Paste any JD above to rank builders by ATS match percentage</span>
-                  )}
-                </div>
-                <Button
-                  onClick={() => searchCandidates({ mode: "jd" })}
-                  disabled={!jobDescription.trim()}
-                  className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-purple-600/20 flex items-center gap-2 active:scale-95 transition-all disabled:opacity-50"
-                >
-                  <Sparkles className="h-4 w-4 text-amber-300" />
-                  <span>Scan JD & Rank Candidates by ATS Score</span>
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: Quick Scope & Keyword Filter */}
-          {searchMode === "scope" && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-                  Natural Language Query or Architectural Scope
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-indigo-400" />
-                  <input
-                    type="text"
-                    value={semanticQuery}
-                    onChange={(e) => setSemanticQuery(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="e.g. Senior engineer who built cloud microservices with React & Kafka..."
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none text-xs sm:text-sm font-medium text-slate-800 transition-all placeholder:text-slate-400 shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Technologies / Stack
-                  </label>
-                  <div className="relative">
-                    <Code className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      value={skillsQuery}
-                      onChange={(e) => setSkillsQuery(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      placeholder="e.g. React, Node.js, Python..."
-                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-400 outline-none text-xs text-slate-700 transition-all placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Role / Specialization
-                  </label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      value={roleQuery}
-                      onChange={(e) => setRoleQuery(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      placeholder="e.g. Full-Stack Lead, Backend Architect..."
-                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-400 outline-none text-xs text-slate-700 transition-all placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-end">
-                  <Button
-                    onClick={() => searchCandidates({ mode: "scope" })}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
+          {/* AI Job-Fit Scanner (Paste JD) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                <Target className="h-4 w-4 text-purple-600" />
+                Target Job Description (JD) / Requirements
+              </label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-bold text-slate-400">Quick Samples:</span>
+                {SAMPLE_JDS.map((sample, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleApplySampleJD(sample.jd)}
+                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg transition-colors"
                   >
-                    <Sparkles className="h-4 w-4 text-amber-300" />
-                    Apply Match
-                  </Button>
-                </div>
+                    {sample.title}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
+
+            <div className="relative">
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste complete Job Description (JD) or technical requirements here... e.g. We are looking for a Full-Stack Engineer with React, Node.js, PostgreSQL, Docker, and experience with cloud microservices..."
+                rows={4}
+                className="w-full bg-white border border-purple-200/90 rounded-2xl p-4 text-xs sm:text-sm font-medium text-slate-800 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-slate-400 shadow-sm leading-relaxed"
+              />
+            </div>
+
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="text-[11px] text-slate-400 font-medium">
+                {jobDescription.trim().length > 0 ? (
+                  <span>{jobDescription.trim().length} characters • Ready for Gemini ATS evaluation</span>
+                ) : (
+                  <span>Paste any JD above to rank builders by ATS match percentage</span>
+                )}
+              </div>
+              <Button
+                onClick={() => searchCandidates()}
+                disabled={!jobDescription.trim()}
+                className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-purple-600/20 flex items-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Sparkles className="h-4 w-4 text-amber-300" />
+                <span>Scan JD & Rank Candidates by ATS Score</span>
+              </Button>
+            </div>
+          </div>
 
           {/* Builder Count */}
           <div className="flex items-center justify-end pt-3 border-t border-slate-100 flex-wrap gap-2">
