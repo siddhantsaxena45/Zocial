@@ -265,16 +265,16 @@ const Profile = () => {
 
                         <div className="flex flex-col gap-5 flex-1 min-w-0 text-center md:text-left w-full">
                             <div className="space-y-3">
-                                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 w-full">
-                                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-3 gap-y-1 min-w-0">
-                                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight break-words">
+                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 w-full">
+                                    <div className="flex flex-col min-w-0">
+                                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
                                             {userProfile?.name || userProfile?.username}
                                         </h1>
-                                        <span className="text-sm md:text-base font-bold text-indigo-600 break-all shrink-0">
+                                        <p className="text-sm md:text-base font-bold text-indigo-600 mt-0.5">
                                             {userProfile?.username?.startsWith('@') ? userProfile?.username : `@${userProfile?.username}`}
-                                        </span>
+                                        </p>
                                     </div>
-                                    <div className="flex items-center flex-wrap gap-2 shrink-0 justify-center md:justify-start xl:justify-end">
+                                    <div className="flex items-center flex-wrap gap-2 shrink-0 justify-center md:justify-start sm:justify-end pt-1">
                                         {!isloggedIn ? (
                                             <div className="flex items-center flex-wrap gap-2">
                                                 <Button
@@ -334,13 +334,10 @@ const Profile = () => {
                                         )}
                                     </div>
                                 </div>
-                                <p className="text-slate-700 font-bold tracking-tight text-sm md:text-base">
-                                    {userProfile?.resume_data?.headline || userProfile?.targetRole || (userProfile?.posts?.length > 0 ? "Verified Technical Builder" : "Builder on Zocial")}
-                                </p>
 
-                                {(userProfile?.resume_data?.ai_summary || userProfile?.ai_summary || userProfile?.bio) && (
-                                    <p className="text-xs md:text-sm text-slate-500 font-medium leading-relaxed max-w-2xl italic">
-                                        "{userProfile?.resume_data?.ai_summary || userProfile?.ai_summary || userProfile?.bio}"
+                                {(userProfile?.resume_data?.headline || userProfile?.targetRole) && (
+                                    <p className="text-slate-700 font-bold tracking-tight text-sm md:text-base">
+                                        {userProfile?.resume_data?.headline || userProfile?.targetRole}
                                     </p>
                                 )}
 

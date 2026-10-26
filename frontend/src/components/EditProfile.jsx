@@ -104,7 +104,7 @@ const EditProfile = () => {
         }
     };
 
-    const aiHeadline = user?.resume_data?.headline || user?.targetRole || "Verified Technical Builder";
+    const aiHeadline = user?.resume_data?.headline || user?.targetRole || "";
     const aiSummary = user?.resume_data?.ai_summary || user?.ai_summary || "Gemini AI analyzes your project transmissions to automatically synthesize your career headline and resume.";
 
     return (
@@ -155,7 +155,7 @@ const EditProfile = () => {
                                         <span className="text-[9px] font-black uppercase tracking-wider">AI Headline</span>
                                     </div>
                                     <p className="text-xs text-slate-800 font-bold leading-snug">
-                                        {aiHeadline}
+                                        {aiHeadline || "Generated automatically from project transmissions"}
                                     </p>
                                     <p className="text-[11px] text-slate-500 italic leading-relaxed mt-2 line-clamp-4">
                                         "{aiSummary}"
