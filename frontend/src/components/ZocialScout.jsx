@@ -196,7 +196,7 @@ const ZocialScout = () => {
           {/* Builder Count */}
           <div className="flex items-center justify-end pt-3 border-t border-slate-100 flex-wrap gap-2">
             <div className="text-xs font-bold text-slate-500">
-              Found <span className="text-indigo-600 font-black">{visibleCandidates.length}</span> {isFilterActive ? "Matching Candidates" : "Verified Builders"}
+              Found <span className="text-indigo-600 font-black">{visibleCandidates.length}</span> {isFilterActive ? "Matching Candidates" : "Candidates"}
             </div>
           </div>
         </div>
@@ -237,14 +237,14 @@ const ZocialScout = () => {
             <Users className="h-12 w-12 text-slate-300 mx-auto" />
             <h3 className="text-base font-black text-slate-700">No Candidates Matching Criteria</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Try adjusting your Job Description or clearing filters to browse verified builders.
+              Try adjusting your Job Description or clearing filters to browse candidates.
             </p>
             <Button
               onClick={clearFilters}
               variant="outline"
               className="rounded-xl border-slate-200 text-xs font-bold"
             >
-              View All Builders
+              View All Candidates
             </Button>
           </div>
         ) : (
@@ -252,12 +252,12 @@ const ZocialScout = () => {
             {visibleCandidates.map((candidate) => (
               <div
                 key={candidate._id}
-                className="glass-card rounded-3xl p-6 border border-white/80 shadow-xl hover:shadow-2xl transition-all duration-300 space-y-5 flex flex-col justify-between"
+                className="glass-card rounded-3xl p-6 border border-white/80 shadow-xl hover:shadow-2xl transition-all duration-300 space-y-4 flex flex-col justify-between"
               >
                 {/* Header Profile Area */}
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Link to={`/profile/${candidate._id}`}>
                         <Avatar className="h-14 w-14 border-2 border-indigo-100 shadow-md hover:scale-105 transition-transform">
                           <AvatarImage src={candidate.profilepicture} />
@@ -266,29 +266,21 @@ const ZocialScout = () => {
                           </AvatarFallback>
                         </Avatar>
                       </Link>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Link to={`/profile/${candidate._id}`} className="flex flex-col">
-                            <h3 className="text-base font-black text-slate-900 hover:text-indigo-600 transition-colors">
-                              {candidate.name || candidate.username}
-                            </h3>
-                            <span className="text-[11px] font-semibold text-slate-400">
-                              {candidate.username?.startsWith('@') ? candidate.username : `@${candidate.username}`}
-                            </span>
-                          </Link>
-                        </div>
-                        <p className="text-xs font-bold text-indigo-700">
-                          {candidate.targetRole}
-                        </p>
-                        <p className="text-[11px] text-slate-500">
-                          Rate: <span className="font-semibold text-slate-700">{candidate.hourlyRate}</span>
-                        </p>
+                      <div className="flex flex-col min-w-0">
+                        <Link to={`/profile/${candidate._id}`} className="truncate">
+                          <h3 className="text-base font-black text-slate-900 hover:text-indigo-600 transition-colors truncate">
+                            {candidate.name || candidate.username}
+                          </h3>
+                          <span className="text-xs font-semibold text-indigo-600 truncate block">
+                            {candidate.username?.startsWith('@') ? candidate.username : `@${candidate.username}`}
+                          </span>
+                        </Link>
                       </div>
                     </div>
 
-                    {/* ATS Score Badge (When searching) vs Verified Builder Badge */}
-                    <div className="flex flex-col items-end">
-                      {candidate.matchScore !== null && candidate.matchScore !== undefined ? (
+                    {/* ATS Score Badge (When matching / evaluated) */}
+                    {candidate.matchScore !== null && candidate.matchScore !== undefined && (
+                      <div className="flex flex-col items-end shrink-0">
                         <div className={`px-3 py-1 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm border ${
                           candidate.matchScore >= 80
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -299,122 +291,29 @@ const ZocialScout = () => {
                           <Sparkles className="h-3 w-3" />
                           <span>{candidate.matchScore}% ATS Score</span>
                         </div>
-                      ) : (
-                        <div className="px-2.5 py-1 bg-purple-50/90 border border-purple-200/80 rounded-xl text-purple-700 font-bold text-[10px] flex items-center gap-1 shadow-sm">
-                          <ShieldCheck className="h-3.5 w-3.5 text-purple-600" />
-                          <span>Verified Builder</span>
-                        </div>
-                      )}
-                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
-                        {candidate.proofOfWorkCount} Transmissions
-                      </span>
-                    </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Semantic ATS Match Reason */}
+                  {/* Semantic ATS Match Reason (When matching / evaluated) */}
                   {candidate.semanticReason && (
                     <div className="flex items-center gap-2 text-[11px] font-semibold text-purple-900 bg-purple-50/90 px-3.5 py-2 rounded-xl border border-purple-100 shadow-xs">
                       <Target className="h-3.5 w-3.5 text-purple-600 shrink-0" />
                       <span className="leading-relaxed">{candidate.semanticReason}</span>
                     </div>
                   )}
-
-                  <p className="text-xs text-slate-600 font-medium line-clamp-2 italic leading-relaxed">
-                    "{candidate.bio || "Dedicated builder creating production-ready digital solutions."}"
-                  </p>
-
-                  {/* Skills Pills */}
-                  {candidate.skills && candidate.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {candidate.skills.slice(0, 6).map((skill, idx) => {
-                        const isMatched = candidate.matchedSkills?.some(
-                          m => m.toLowerCase() === skill.toLowerCase()
-                        );
-                        return (
-                          <span
-                            key={idx}
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${
-                              isMatched
-                                ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                                : "bg-slate-100 text-slate-700 border-slate-200"
-                            }`}
-                          >
-                            {isMatched && <CheckCircle2 className="h-2.5 w-2.5 text-emerald-300" />}
-                            {skill}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Verified Proof-of-Work Gallery Thumbnails */}
-                  {candidate.transmissions && candidate.transmissions.length > 0 && (
-                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        Verified Proof-of-Work Artifacts
-                      </span>
-                      <div className="grid grid-cols-3 gap-2">
-                        {candidate.transmissions.slice(0, 3).map((item) => (
-                          <div
-                            key={item._id}
-                            className="relative h-20 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 group/item shadow-sm"
-                          >
-                            <img
-                              src={item.image}
-                              alt="artifact"
-                              className="w-full h-full object-cover group-hover/item:scale-110 transition-transform"
-                            />
-                            {item.githubUrl && (
-                              <span className="absolute bottom-1 right-1 p-1 bg-black/70 rounded-md text-white">
-                                <Github className="h-2.5 w-2.5" />
-                              </span>
-                            )}
-                            {item.liveUrl && (
-                              <span className="absolute top-1 right-1 p-1 bg-indigo-600/90 rounded-md text-white">
-                                <ExternalLink className="h-2.5 w-2.5" />
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Card Action CTAs */}
-                <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {candidate.githubProfile && (
-                      <a
-                        href={candidate.githubProfile}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                        title="GitHub Profile"
-                      >
-                        <Github className="h-3.5 w-3.5" />
-                      </a>
-                    )}
-                    {candidate.portfolioUrl && (
-                      <a
-                        href={candidate.portfolioUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                        title="Portfolio Website"
-                      >
-                        <Globe className="h-3.5 w-3.5" />
-                      </a>
-                    )}
-                    <Link to={`/resume/${candidate._id}`}>
-                      <Button
-                        variant="outline"
-                        className="text-[10px] font-black uppercase tracking-wider h-8 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 gap-1"
-                      >
-                        <FileText className="h-3 w-3" /> View Resume
-                      </Button>
-                    </Link>
-                  </div>
+                {/* Card Action CTAs: Keep ONLY View Resume & Direct InMail */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <Link to={`/resume/${candidate._id}`}>
+                    <Button
+                      variant="outline"
+                      className="text-[10px] font-black uppercase tracking-wider h-8 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 gap-1.5 shadow-xs"
+                    >
+                      <FileText className="h-3 w-3" /> View Resume
+                    </Button>
+                  </Link>
 
                   <Button
                     onClick={() => startChatWithCandidate(candidate)}

@@ -279,9 +279,6 @@ const CreatePost = ({ open, setOpen }) => {
                               Tagged Collaborator
                             </span>
                           </span>
-                          <span className="text-[10px] text-slate-500 font-medium">
-                            {selectedCollaborator.targetRole || selectedCollaborator.bio || "Zocial Builder"}
-                          </span>
                         </div>
                       </div>
                       <button 
@@ -371,7 +368,6 @@ const CreatePost = ({ open, setOpen }) => {
                               </Avatar>
                               <div className="flex flex-col flex-1 min-w-0">
                                 <span className="text-xs font-bold text-slate-900 truncate">@{u.username}</span>
-                                <span className="text-[10px] text-slate-500 truncate">{u.targetRole || u.bio || "Zocial Builder"}</span>
                               </div>
                               <span className="text-[10px] font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 shrink-0 hover:bg-purple-600 hover:text-white transition-colors">
                                 Tag Partner

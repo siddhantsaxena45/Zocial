@@ -223,7 +223,6 @@ const BountyHub = () => {
                     </Avatar>
                     <div className="text-left">
                       <p className="text-xs font-bold text-white shadow-sm">@{bounty.author?.username}</p>
-                      <p className="text-[10px] text-slate-300">{bounty.author?.targetRole || "Software Builder"}</p>
                     </div>
                   </div>
                 </div>

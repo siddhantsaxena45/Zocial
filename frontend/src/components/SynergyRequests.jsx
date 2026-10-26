@@ -185,9 +185,6 @@ const SynergyRequests = ({ open, setOpen }) => {
                                                 {request.sender?.username?.startsWith('@') ? request.sender?.username : `@${request.sender?.username}`}
                                             </span>
                                         </Link>
-                                        <p className="text-[10px] text-slate-500 font-medium truncate">
-                                            {request.sender?.targetRole || request.sender?.bio || "Builder"}
-                                        </p>
                                     </div>
                                     <div className="flex gap-1.5 shrink-0">
                                         <Button 
@@ -254,9 +251,6 @@ const SynergyRequests = ({ open, setOpen }) => {
                                                 Pending
                                             </span>
                                         </div>
-                                        <p className="text-[10px] text-slate-500 font-medium truncate">
-                                            {request.receiver?.targetRole || request.receiver?.bio || "Builder"}
-                                        </p>
                                     </div>
                                     <div className="shrink-0">
                                         <Button 

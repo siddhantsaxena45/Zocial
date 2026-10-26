@@ -335,12 +335,6 @@ const Profile = () => {
                                     </div>
                                 </div>
 
-                                {(userProfile?.resume_data?.headline || userProfile?.targetRole) && (
-                                    <p className="text-slate-700 font-bold tracking-tight text-sm md:text-base">
-                                        {userProfile?.resume_data?.headline || userProfile?.targetRole}
-                                    </p>
-                                )}
-
                                 {(userProfile?.githubProfile || userProfile?.portfolioUrl) && (
                                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
                                         {userProfile?.githubProfile && (

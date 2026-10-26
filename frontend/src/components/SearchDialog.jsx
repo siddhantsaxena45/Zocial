@@ -125,7 +125,7 @@ const SearchDialog = ({ open, setOpen }) => {
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex flex-col flex-1 min-w-0 justify-center">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-purple-700 transition-colors truncate">
                       {u.name || u.username}
@@ -133,27 +133,7 @@ const SearchDialog = ({ open, setOpen }) => {
                     <span className="text-[10px] font-semibold text-purple-600 truncate">
                       {u.username?.startsWith('@') ? u.username : `@${u.username}`}
                     </span>
-                    {u.targetRole && (
-                      <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-2 py-0.2 rounded-md truncate max-w-[150px]">
-                        {u.targetRole}
-                      </span>
-                    )}
                   </div>
-                  <span className="text-[11px] text-slate-500 truncate max-w-sm font-medium mt-0.5">
-                    {u.bio || "Zocial Network Member"}
-                  </span>
-                  {u.skills && u.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {u.skills.slice(0, 4).map((skill, idx) => (
-                        <span 
-                          key={idx} 
-                          className="px-1.5 py-0.5 bg-slate-100 group-hover:bg-purple-100/70 text-slate-600 group-hover:text-purple-800 text-[9px] font-bold rounded-md"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div className="text-slate-300 group-hover:text-purple-600 transition-transform group-hover:translate-x-0.5 shrink-0 pr-1">

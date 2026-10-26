@@ -36,9 +36,6 @@ const SuggestedUsers = () => {
                                     <span className="text-[10px] text-indigo-600 font-semibold truncate w-full">
                                         {user?.username?.startsWith('@') ? user?.username : `@${user?.username}`}
                                     </span>
-                                    <span className="text-[10px] text-slate-500 font-medium truncate w-full italic">
-                                        {user?.resume_data?.headline || user?.targetRole || "Verified Builder"}
-                                    </span>
                                 </div>
                             </div>
                             <Link to={`/profile/${user?._id}`}>
