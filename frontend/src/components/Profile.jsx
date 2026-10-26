@@ -5,7 +5,7 @@ import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { setAuthUser, updateUserProfile } from '@/redux/authSlice';
-import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark, Briefcase, DollarSign, Github, Globe, FileText } from "lucide-react";
+import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark, Briefcase, DollarSign, Github, Globe, FileText, Sparkles } from "lucide-react";
 import { toast } from 'sonner';
 import axios from "axios";
 import NetworkListDialog from './NetworkListDialog';
