@@ -85,6 +85,7 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                              notification.type === 'connectionAccepted' ? 'bg-emerald-500' :
                              notification.type === 'synergyTag' ? 'bg-purple-600' :
                              notification.type === 'vouchAccepted' ? 'bg-amber-600' :
+                             notification.type === 'missedCall' ? 'bg-rose-600' :
                              'bg-slate-400'
                          }`}>
                             {notification.type === 'like' && <FaHeart className="text-white text-[8px]" />}
@@ -93,11 +94,12 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                             {notification.type === 'connectionAccepted' && <UserCheck className="text-white h-2 w-2" />}
                             {notification.type === 'synergyTag' && <Handshake className="text-white h-2 w-2" />}
                             {notification.type === 'vouchAccepted' && <ShieldCheck className="text-white h-2 w-2" />}
+                            {notification.type === 'missedCall' && <PhoneMissed className="text-white h-2.5 w-2.5" />}
                          </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col">
+                  <div className="flex flex-col flex-1 min-w-0">
                     <p className="text-xs text-slate-700 leading-tight">
                       <Link 
                         to={`/profile/${notification.userId}`} 
@@ -112,6 +114,7 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                        notification.type === 'connectionAccepted' ? 'accepted your synergy request' :
                        notification.type === 'synergyTag' ? 'tagged you as collaborator on a transmission' :
                        notification.type === 'vouchAccepted' ? 'verified peer synergy on your transmission' :
+                       notification.type === 'missedCall' ? 'called you (missed video call)' :
                        'updated their connection'}
                     </p>
                     <span className="text-[10px] text-slate-400 font-medium mt-0.5 italic">
@@ -121,8 +124,32 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                          notification.type === 'connectionAccepted' ? 'Neural Link Established' :
                          notification.type === 'synergyTag' ? 'Synergy Attribution' :
                          notification.type === 'vouchAccepted' ? 'Verified Synergy' :
+                         notification.type === 'missedCall' ? 'Missed Video Call' :
                          'Network Update'}
                     </span>
+                    {notification.type === 'missedCall' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.dispatchEvent(
+                            new CustomEvent("initiate-video-call", {
+                              detail: {
+                                targetUser: notification.userDetails || {
+                                  _id: notification.userId,
+                                  username: notification.userDetails?.username,
+                                  profilepicture: notification.userDetails?.profilepicture
+                                }
+                              }
+                            })
+                          );
+                        }}
+                        className="mt-1.5 self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold border border-rose-200 shadow-xs transition-colors"
+                      >
+                        <Video className="h-3 w-3 text-rose-600" />
+                        <span>Call Back</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
