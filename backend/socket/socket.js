@@ -1,6 +1,8 @@
 import { Server } from "socket.io";
 import express from "express";
 import http from "http";
+import { User } from "../models/user.model.js";
+import { Notification } from "../models/notification.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -86,7 +88,7 @@ io.on("connection", (socket) => {
   });
 
   // Call rejected
-  socket.on("call-rejected", ({ to }) => {
+  socket.on("call-rejected", async ({ to }) => {
     const receiverSocketId = getReciverId(to);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("call-rejected", {
@@ -102,6 +104,35 @@ io.on("connection", (socket) => {
       io.to(receiverSocketId).emit("call-ended", {
         from: userId,
       });
+    }
+  });
+
+  // Missed call notification
+  socket.on("missed-call", async ({ to }) => {
+    try {
+      if (!to || !userId || to === userId) return;
+      const caller = await User.findById(userId).select("username profilepicture");
+      if (caller) {
+        const notif = await Notification.create({
+          recipient: to,
+          sender: userId,
+          type: "missedCall",
+          message: `Missed video call from @${caller.username}`
+        });
+        const receiverSocketId = getReciverId(to);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("notification", {
+            type: "missedCall",
+            userId,
+            userDetails: caller,
+            message: `Missed video call from @${caller.username}`,
+            createdAt: notif.createdAt,
+            timestamp: Date.now()
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Socket missed-call error:", e);
     }
   });
 
