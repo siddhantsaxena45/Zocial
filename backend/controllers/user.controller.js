@@ -804,6 +804,9 @@ export const scoutCandidates = async (req, res) => {
         );
 
         const filter = {};
+        if (req.id) {
+            filter._id = { $ne: req.id };
+        }
         if (String(openOnly) === "true") {
             filter.openToOpportunities = true;
         }

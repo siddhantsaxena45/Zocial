@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
-import useGetUserProfile from '@/hooks/useGetUserProfile';
-import { setUserProfile } from '@/redux/authSlice';
+import { setUserProfile, setAuthUser } from '@/redux/authSlice';
 import { Button } from './ui/button';
 import { 
     ArrowLeft, Download, Mail, Briefcase, Award, Zap, 
@@ -20,19 +19,48 @@ const ResumeGenerator = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     
-    useGetUserProfile(params.id);
-    const { userProfile, user: authUser } = useSelector(state => state.auth);
+    const { user: authUser } = useSelector(state => state.auth);
 
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [targetProfile, setTargetProfile] = useState(null);
     const [resumeData, setResumeData] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [jobFitOpen, setJobFitOpen] = useState(false);
 
-    // Sync resumeData when userProfile changes
+    // Fetch fresh profile and resume whenever params.id changes
     useEffect(() => {
-        if (userProfile?.resume_data) {
-            setResumeData(userProfile.resume_data);
-        }
-    }, [userProfile]);
+        let isMounted = true;
+        const fetchTargetResume = async () => {
+            if (!params.id) return;
+            setLoading(true);
+            setResumeData(null);
+            setTargetProfile(null);
+            try {
+                const res = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/resume/${params.id}`,
+                    { withCredentials: true }
+                );
+                if (isMounted && res.data.success) {
+                    setTargetProfile(res.data.user);
+                    setResumeData(res.data.resume || null);
+                    dispatch(setUserProfile(res.data.user));
+                }
+            } catch (err) {
+                console.error("Failed to fetch resume:", err);
+                if (isMounted) {
+                    toast.error(err.response?.data?.message || "Failed to load resume");
+                }
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchTargetResume();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [params.id, dispatch]);
 
     const isOwner = Boolean(
         authUser?._id && params.id && String(authUser._id) === String(params.id)
@@ -58,7 +86,9 @@ const ResumeGenerator = () => {
                 toast.success(res.data.message || "Resume updated with Gemini AI!");
                 setResumeData(res.data.resume);
                 if (res.data.user) {
+                    setTargetProfile(res.data.user);
                     dispatch(setUserProfile(res.data.user));
+                    dispatch(setAuthUser(res.data.user));
                 }
             } else {
                 toast.error(res.data.message || "Failed to generate resume");
@@ -72,7 +102,7 @@ const ResumeGenerator = () => {
         }
     };
 
-    if (!userProfile) {
+    if (loading || !targetProfile) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-transparent gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
@@ -85,9 +115,9 @@ const ResumeGenerator = () => {
         window.print();
     };
 
-    const activeSkills = resumeData?.skills || userProfile.skills || [];
-    const activeSummary = resumeData?.ai_summary || userProfile.ai_summary || "";
-    const activeHeadline = resumeData?.headline || userProfile.bio || "Zocial Network Professional";
+    const activeSkills = resumeData?.skills || targetProfile.skills || [];
+    const activeSummary = resumeData?.ai_summary || targetProfile.ai_summary || "";
+    const activeHeadline = resumeData?.headline || targetProfile.bio || "Zocial Network Professional";
     const activeHighlights = resumeData?.highlights || [];
     const activeDomains = resumeData?.domains || [];
     const engineModel = resumeData?.model || "gemini-2.5-flash";
@@ -151,7 +181,7 @@ const ResumeGenerator = () => {
                 <div className="w-full max-w-4xl mx-auto mb-4 print:hidden">
                     <div className="p-3.5 rounded-2xl bg-purple-50/90 border border-purple-200/80 flex items-center gap-3 text-purple-900 text-xs font-medium shadow-xs">
                         <ShieldCheck className="h-5 w-5 text-purple-600 shrink-0" />
-                        <span>Viewing public portfolio profile for <strong>@{userProfile.username}</strong>. Only the account owner can build or update their AI resume.</span>
+                        <span>Viewing public portfolio profile for <strong>@{targetProfile.username}</strong>. Only the account owner can build or update their AI resume.</span>
                     </div>
                 </div>
             )}
@@ -166,15 +196,15 @@ const ResumeGenerator = () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 border-b-2 border-slate-100 pb-8 mb-8 relative z-10">
                     <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-3xl overflow-hidden shrink-0 shadow-lg border-4 border-white">
                         <img 
-                            src={userProfile.profilepicture || "https://github.com/shadcn.png"} 
-                            alt={userProfile.username}
+                            src={targetProfile.profilepicture || "https://github.com/shadcn.png"} 
+                            alt={targetProfile.username}
                             className="w-full h-full object-cover"
                         />
                     </div>
                     <div className="flex flex-col flex-1">
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
-                                {userProfile.username}
+                                {targetProfile.username}
                             </h1>
                             {resumeData && (
                                 <div className="flex flex-wrap items-center gap-2">
@@ -197,15 +227,15 @@ const ResumeGenerator = () => {
                         <div className="flex flex-wrap items-center gap-5 text-slate-500 text-xs font-semibold uppercase tracking-wider">
                             <span className="flex items-center gap-2">
                                 <Mail className="h-3.5 w-3.5 text-slate-400"/> 
-                                {userProfile.email || "Contact via Zocial"}
+                                {targetProfile.email || "Contact via Zocial"}
                             </span>
                             <span className="flex items-center gap-2">
                                 <Briefcase className="h-3.5 w-3.5 text-slate-400"/> 
-                                {userProfile.posts?.length || 0} Transmissions
+                                {targetProfile.posts?.length || 0} Transmissions
                             </span>
-                            {userProfile.githubProfile && (
+                            {targetProfile.githubProfile && (
                                 <a 
-                                    href={userProfile.githubProfile}
+                                    href={targetProfile.githubProfile}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800"
@@ -213,9 +243,9 @@ const ResumeGenerator = () => {
                                     <Github className="h-3.5 w-3.5 text-slate-500"/> GitHub
                                 </a>
                             )}
-                            {userProfile.portfolioUrl && (
+                            {targetProfile.portfolioUrl && (
                                 <a 
-                                    href={userProfile.portfolioUrl}
+                                    href={targetProfile.portfolioUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800"
@@ -284,11 +314,11 @@ const ResumeGenerator = () => {
                             <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col gap-4">
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Followers & Reach</span>
-                                    <span className="text-2xl font-black text-slate-900">{userProfile.followers?.length || 0}</span>
+                                    <span className="text-2xl font-black text-slate-900">{targetProfile.followers?.length || 0}</span>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Synergy Connections</span>
-                                    <span className="text-2xl font-black text-slate-900">{userProfile.following?.length || 0}</span>
+                                    <span className="text-2xl font-black text-slate-900">{targetProfile.following?.length || 0}</span>
                                 </div>
                             </div>
                         </div>
@@ -369,7 +399,7 @@ const ResumeGenerator = () => {
                             </h3>
                             
                             <div className="flex flex-col gap-6">
-                                {userProfile.posts && userProfile.posts.slice(0, 3).map((post, i) => (
+                                {targetProfile.posts && targetProfile.posts.slice(0, 3).map((post, i) => (
                                     <div key={post._id} className="relative pb-4 border-b border-slate-100 last:border-b-0">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
                                             {new Date(post.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}

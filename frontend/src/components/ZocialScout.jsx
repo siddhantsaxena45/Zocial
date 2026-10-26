@@ -8,7 +8,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setSelectedUser } from "@/redux/authSlice";
 import { toast } from "sonner";
 
@@ -18,9 +18,9 @@ const ZocialScout = () => {
   const [semanticQuery, setSemanticQuery] = useState("");
   const [skillsQuery, setSkillsQuery] = useState("");
   const [roleQuery, setRoleQuery] = useState("");
-  const [openOnly, setOpenOnly] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { user: authUser } = useSelector((state) => state.auth);
 
   const searchCandidates = async () => {
     try {
