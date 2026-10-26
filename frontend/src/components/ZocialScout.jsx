@@ -30,11 +30,7 @@ const SAMPLE_JDS = [
 const ZocialScout = () => {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchMode, setSearchMode] = useState("jd"); // "jd" | "scope"
   const [jobDescription, setJobDescription] = useState("");
-  const [semanticQuery, setSemanticQuery] = useState("");
-  const [skillsQuery, setSkillsQuery] = useState("");
-  const [roleQuery, setRoleQuery] = useState("");
   const [isJDModeActive, setIsJDModeActive] = useState(false);
 
   const navigate = useNavigate();
@@ -44,15 +40,9 @@ const ZocialScout = () => {
   const searchCandidates = async (overrideParams = {}) => {
     try {
       setLoading(true);
-      const activeMode = overrideParams.mode || searchMode;
       const jdToUse = overrideParams.jd !== undefined ? overrideParams.jd : jobDescription;
-      const isJD = activeMode === "jd" && Boolean(jdToUse?.trim());
-
       const payload = {
-        jd: isJD ? jdToUse.trim() : "",
-        query: activeMode === "scope" ? (overrideParams.query !== undefined ? overrideParams.query : semanticQuery).trim() : "",
-        skills: (overrideParams.skills !== undefined ? overrideParams.skills : skillsQuery).trim(),
-        role: (overrideParams.role !== undefined ? overrideParams.role : roleQuery).trim()
+        jd: jdToUse?.trim() || ""
       };
 
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/scout`, payload, {
@@ -75,26 +65,16 @@ const ZocialScout = () => {
     searchCandidates();
   }, []);
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      searchCandidates();
-    }
-  };
-
   const handleApplySampleJD = (sampleJdText) => {
     setJobDescription(sampleJdText);
-    setSearchMode("jd");
-    searchCandidates({ mode: "jd", jd: sampleJdText });
+    searchCandidates({ jd: sampleJdText });
     toast.success("Sample Job Description loaded & ATS scan started!");
   };
 
   const clearFilters = () => {
     setJobDescription("");
-    setSemanticQuery("");
-    setSkillsQuery("");
-    setRoleQuery("");
     setIsJDModeActive(false);
-    searchCandidates({ mode: "jd", jd: "", query: "", skills: "", role: "" });
+    searchCandidates({ jd: "" });
   };
 
   const startChatWithCandidate = (candidate) => {
@@ -110,12 +90,7 @@ const ZocialScout = () => {
     toast.success(`Opening direct collaboration with @${candidate.username}`);
   };
 
-  const isFilterActive = Boolean(
-    jobDescription.trim() || 
-    semanticQuery.trim() || 
-    skillsQuery.trim() || 
-    roleQuery.trim()
-  );
+  const isFilterActive = Boolean(jobDescription.trim());
 
   const visibleCandidates = candidates.filter(
     (c) => String(c._id) !== String(authUser?._id)
