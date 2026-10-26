@@ -65,6 +65,16 @@ const CommentDialog = ({ open, setOpen }) => {
     }
   };
 
+  const formatHandle = (raw) => {
+    if (!raw) return "@builder";
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("@")) return trimmed;
+    return `@${trimmed.toLowerCase().replace(/\s+/g, '')}`;
+  };
+
+  const cleanAuthor = formatHandle(selectedPost?.author?.username);
+  const initialLetter = cleanAuthor.replace(/^@/, '')[0]?.toUpperCase() || 'U';
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-4xl w-full h-[60vh] xl:h-[80vh] p-0 rounded-xl overflow-hidden shadow-2xl">
@@ -86,10 +96,10 @@ const CommentDialog = ({ open, setOpen }) => {
               <div className="flex items-center gap-2 sm:gap-3  ">
                 <Avatar className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden">
                   <AvatarImage src={selectedPost?.author?.profilepicture || "https://github.com/shadcn.png"} className="w-full h-full object-cover" />
-                  <AvatarFallback className="bg-slate-100 font-bold text-slate-700">{selectedPost?.author?.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                  <AvatarFallback className="bg-slate-100 font-bold text-slate-700">{initialLetter}</AvatarFallback>
                 </Avatar>
-                <span className="font-medium text-sm max-w-[180px]">
-                  {selectedPost?.author?.username}
+                <span className="font-semibold text-sm max-w-[180px] text-slate-900">
+                  {cleanAuthor}
                 </span>
               </div>
               

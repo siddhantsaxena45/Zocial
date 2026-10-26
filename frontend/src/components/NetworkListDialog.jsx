@@ -57,12 +57,9 @@ const NetworkListDialog = ({ open, setOpen, title, userIds = [] }) => {
                         {initialLetter}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col flex-1 text-left">
+                    <div className="flex items-center flex-1 text-left">
                       <span className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors text-sm">
                         {cleanUsername}
-                      </span>
-                      <span className="text-xs text-slate-500 truncate max-w-[200px]">
-                        {user.bio || "Professional Network Member"}
                       </span>
                     </div>
                   </Link>

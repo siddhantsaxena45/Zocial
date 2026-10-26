@@ -41,11 +41,10 @@ const LikesDialog = ({ open, setOpen, likes }) => {
                                                 </AvatarFallback>
                                             </Avatar>
                                         </Link>
-                                        <div className="flex flex-col">
+                                        <div className="flex items-center">
                                             <Link to={`/profile/${like._id || like}`} onClick={() => setOpen(false)} className="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors">
                                                 {cleanHandle}
                                             </Link>
-                                            <span className="text-xs text-slate-500 font-medium">Network Connection</span>
                                         </div>
                                     </div>
                                 </div>

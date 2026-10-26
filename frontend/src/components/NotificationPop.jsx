@@ -9,6 +9,13 @@ import { markAllNotificationsSeen } from "@/redux/rtnSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedPost, setEngagementModalOpen } from "@/redux/postSlice";
 
+const formatHandle = (raw) => {
+  if (!raw) return "@builder";
+  const trimmed = String(raw).trim();
+  if (trimmed.startsWith("@")) return trimmed;
+  return `@${trimmed.toLowerCase().replace(/\s+/g, '')}`;
+};
+
 const NotificationPopover = ({ likeNotification = [], children }) => {
   const dispatch = useDispatch();
   const { posts } = useSelector(state => state.post);
@@ -55,7 +62,11 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
           ) : (
             [...filteredNotifications]
               .reverse()
-              .map((notification) => (
+              .map((notification) => {
+                const cleanSenderHandle = formatHandle(notification.userDetails?.username);
+                const initialLetter = cleanSenderHandle.replace(/^@/, '')[0]?.toUpperCase() || 'U';
+
+                return (
                 <div
                   key={`${notification.userId}-${notification.postId}-${notification.timestamp}`}
                   onClick={() => handleNotificationClick(notification.postId)}
@@ -70,10 +81,10 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                       <Avatar className="h-10 w-10 border-2 border-white shadow-sm transition-transform hover:scale-110 active:scale-95">
                         <AvatarImage
                           src={notification.userDetails?.profilepicture || "https://github.com/shadcn.png"}
-                          alt={notification.userDetails?.username || "User"}
+                          alt={cleanSenderHandle}
                         />
                         <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold">
-                          {notification.userDetails?.username?.[0] || "?"}
+                          {initialLetter}
                         </AvatarFallback>
                       </Avatar>
                     </Link>
@@ -106,7 +117,7 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                         onClick={(e) => e.stopPropagation()}
                         className="font-black text-slate-900 hover:text-indigo-600 transition-colors"
                       >
-                        {notification.userDetails?.username}
+                        {cleanSenderHandle}
                       </Link>{" "}
                       {notification.type === 'like' ? 'voted on your transmission' : 
                        notification.type === 'comment' ? 'analyzed your transmission' :

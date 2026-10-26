@@ -379,7 +379,7 @@ const handleShare = async (imageUrl) => {
                     </div>
 
                     <div className='text-sm leading-snug text-slate-700 font-medium'>
-                        <span className='font-black mr-2 text-indigo-700'>{post.author?.username}</span>
+                        <span className='font-black mr-2 text-indigo-700'>{authorHandle}</span>
                         {isEditingCaption ? (
                             <div className="mt-2 flex flex-col gap-2 w-full">
                                 <textarea 
@@ -478,14 +478,14 @@ const handleShare = async (imageUrl) => {
                                 {vouchStatus === "accepted" && post.collaboratorUsername && (
                                     <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg shadow-sm">
                                         <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
-                                        <span>Peer-Verified Synergy with @{post.collaboratorUsername}</span>
+                                        <span>Peer-Verified Synergy with {formatHandle(post.collaboratorUsername)}</span>
                                     </span>
                                 )}
 
                                 {vouchStatus !== "accepted" && post.collaboratorUsername && (
                                     <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-lg">
                                         <Handshake className="h-3.5 w-3.5 text-purple-600" />
-                                        <span>Synergy with @{post.collaboratorUsername}</span>
+                                        <span>Synergy with {formatHandle(post.collaboratorUsername)}</span>
                                     </span>
                                 )}
                             </div>
@@ -496,7 +496,7 @@ const handleShare = async (imageUrl) => {
                                     <div className="flex items-center justify-between">
                                         <span className="text-[11px] font-bold text-purple-900 flex items-center gap-1.5">
                                             <Handshake className="h-4 w-4 text-purple-600" />
-                                            @{post.author?.username} tagged you as {post.collaboratorRole || 'Co-Developer'}. Vouch for this synergy?
+                                            {authorHandle} tagged you as {post.collaboratorRole || 'Co-Developer'}. Vouch for this synergy?
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
