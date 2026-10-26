@@ -94,8 +94,8 @@ const BountyHub = () => {
               >
                 <PlusCircle className="h-4 w-4" /> Post a Bounty / Gig
               </Button>
-              <div className="text-xs text-slate-400 flex items-center gap-1.5 pl-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Verified proof-of-work escrow
+              <div className="text-xs text-emerald-400 flex items-center gap-1.5 pl-2 font-semibold">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" /> 100% Free • 0% Platform Fees • Open Collaboration
               </div>
             </div>
           </div>

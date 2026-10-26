@@ -292,7 +292,7 @@ const CreatePost = ({ open, setOpen }) => {
                       onChange={(e) => setIsBounty(e.target.checked)}
                       className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
                     />
-                    <span>Mark as Micro-Gig / Paid Bounty</span>
+                    <span>Mark as Deliverable / Open Bounty (100% Free)</span>
                   </label>
 
                   {isBounty && (

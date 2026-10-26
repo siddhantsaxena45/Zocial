@@ -6,7 +6,8 @@ import { setUserProfile } from '@/redux/authSlice';
 import { Button } from './ui/button';
 import { 
     ArrowLeft, Download, Mail, Briefcase, Award, Zap, 
-    LayoutDashboard, Sparkles, Loader2, RefreshCw, Layers, Target, Github, Globe 
+    LayoutDashboard, Sparkles, Loader2, RefreshCw, Layers, Target, Github, Globe,
+    Eye, ShieldCheck 
 } from 'lucide-react';
 import useAxiosInterceptor from '@/hooks/useAxiosInterceptor';
 import axios from 'axios';
@@ -157,10 +158,18 @@ const ResumeGenerator = () => {
                                 {userProfile.username}
                             </h1>
                             {resumeData && (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                    <Sparkles className="h-3 w-3 text-indigo-500" />
-                                    AI Verified ({engineModel})
-                                </span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                        <Sparkles className="h-3 w-3 text-indigo-500" />
+                                        AI Verified ({engineModel})
+                                    </span>
+                                    {resumeData.isVisionAnalyzed && (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-sm">
+                                            <Eye className="h-3 w-3 text-emerald-600" />
+                                            Vision Verified ({resumeData.visualArtifactsAnalyzed || 1} Proofs)
+                                        </span>
+                                    )}
+                                </div>
                             )}
                         </div>
                         <h2 className="text-base sm:text-lg font-bold text-indigo-600 tracking-wide uppercase mb-3">
@@ -293,6 +302,11 @@ const ResumeGenerator = () => {
                                         <div key={i} className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col gap-2">
                                             <div className="flex items-center justify-between">
                                                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">{hl.title}</h4>
+                                                {hl.visualVerified && (
+                                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm">
+                                                        <Eye className="h-2.5 w-2.5 text-emerald-600" /> Visually Verified
+                                                    </span>
+                                                )}
                                             </div>
                                             <p className="text-xs text-slate-600 font-medium leading-relaxed">
                                                 {hl.detail}
@@ -309,6 +323,23 @@ const ResumeGenerator = () => {
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Visually-Verified Proof of Work (Multimodal Vision Engine) */}
+                        {resumeData?.visual_insights && resumeData.visual_insights.length > 0 && (
+                            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-indigo-50/40 to-white border border-emerald-100/90 shadow-sm space-y-3">
+                                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Eye className="h-4 w-4 text-emerald-600" /> Visually-Verified Proof of Work (Multimodal AI)
+                                </h3>
+                                <ul className="space-y-2">
+                                    {resumeData.visual_insights.map((insight, idx) => (
+                                        <li key={idx} className="text-xs text-slate-700 font-medium flex items-start gap-2 leading-relaxed">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></span>
+                                            <span>{insight}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
                         )}
 

@@ -1,12 +1,12 @@
 import { User } from "../models/user.model.js";
 import { Post } from "../models/post.model.js";
-import { generateJsonWithGemini } from "../utils/geminiRotator.js";
+import { generateJsonWithGemini, fetchImageAsBase64 } from "../utils/geminiRotator.js";
 
 /**
- * 📄 AI Resume Generator Controller
- * Analyzes a user's professional posts, bio, and interactions using Google Gemini 2.5 Flash
- * (with automatic fallback to Gemini 3.8/3.5 Flash and a 10-key rotator) to craft
- * an ATS-ready professional resume.
+ * 📄 AI Resume Generator Controller (Multimodal Vision Enabled)
+ * Analyzes a user's professional posts, bio, and REAL visual artifact screenshots
+ * (UI designs, system architectures, code snippets, terminal outputs) using Google Gemini
+ * 2.5 Flash (with automatic 10-key rotator and model cascade) to craft an ATS-ready resume.
  */
 
 export const generateResume = async (req, res) => {
@@ -33,10 +33,14 @@ export const generateResume = async (req, res) => {
                     {
                         title: "Active Zocial Network Contributor",
                         detail: `Joined the Zocial professional network with ${user.followers?.length || 0} connections and building technical portfolio.`,
-                        skills: ["Networking", "Collaboration"]
+                        skills: ["Networking", "Collaboration"],
+                        visualVerified: false
                     }
                 ],
                 domains: ["Technology", "Software Engineering"],
+                visual_insights: [],
+                visualArtifactsAnalyzed: 0,
+                isVisionAnalyzed: false,
                 model: "starter-template",
                 generatedAt: new Date()
             };
@@ -54,7 +58,55 @@ export const generateResume = async (req, res) => {
             });
         }
 
-        // Format posts for Gemini prompt
+        // 🖼️ Multimodal Vision Preparation: Concurrently fetch and optimize post images
+        const postsWithImages = posts.filter(p => p.image && typeof p.image === "string").slice(0, 5);
+        console.log(`[AI Multimodal Resume] Preparing up to ${postsWithImages.length} visual artifact screenshots for @${user.username}...`);
+
+        const imageFetchPromises = postsWithImages.map(p => fetchImageAsBase64(p.image, 5000));
+        const imageResults = await Promise.allSettled(imageFetchPromises);
+
+        // Build multimodal parts array for Gemini
+        const multimodalParts = [];
+        let analyzedImagesCount = 0;
+
+        multimodalParts.push({
+            text: `You are an elite Principal Technical Recruiter, Staff Architect, and AI Multimodal Resume Strategist.
+Candidate Username: "${user.username}"
+User Bio: "${user.bio || 'Not provided'}"
+Target Role: "${user.targetRole || 'Software Professional'}"
+
+You are provided with BOTH:
+1. Written transmission descriptions and project metadata.
+2. REAL VISUAL ARTIFACT SCREENSHOTS attached directly to these project transmissions.
+
+CRITICAL MULTIMODAL INSTRUCTIONS - DEEP IMAGE UNDERSTANDING:
+Inspect every attached image carefully:
+- **UI/UX & Frontend Quality**: Observe the actual design aesthetics, component architecture, styling polish, micro-interactions, responsive design, dashboard density, and design systems shown in screenshots.
+- **Architectural & System Diagrams**: If an image contains system architecture, cloud topology (AWS/GCP), microservice workflows, or database schema ER diagrams, extract the technical depth and infrastructure skills.
+- **Code & Terminal Proofs**: If an image shows terminal execution, test suites passing, IDE code snippets, or CI/CD pipelines, extract the exact languages, libraries, algorithms, and technical rigor shown.
+- **Credentials & Badges**: If an image is a certificate, hackathon award, or peer recognition, incorporate it into their highlights.`
+        });
+
+        // Attach each successfully fetched image along with its project metadata
+        for (let i = 0; i < postsWithImages.length; i++) {
+            const p = postsWithImages[i];
+            const fetchRes = imageResults[i];
+
+            if (fetchRes.status === "fulfilled" && fetchRes.value) {
+                analyzedImagesCount++;
+                multimodalParts.push({
+                    text: `\n[VISUAL PROOF-OF-WORK ARTIFACT #${analyzedImagesCount}]
+Project Caption: "${p.caption || 'Project release'}"
+Tech Tags: ${p.tags?.join(', ') || 'N/A'}
+Repo: ${p.githubUrl || 'N/A'} | Live: ${p.liveUrl || 'N/A'}
+Code Snippet: ${p.codeSnippet ? p.codeSnippet.substring(0, 250) : 'None'}
+The screenshot below shows the actual visual proof-of-work (UI interface, architecture diagram, or code proof) for this project:`
+                });
+                multimodalParts.push(fetchRes.value);
+            }
+        }
+
+        // Format all posts as text log summary
         const formattedPosts = posts.slice(0, 15).map((p, index) => {
             const dateStr = p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : 'Recent';
             const likesCount = p.likes ? p.likes.length : 0;
@@ -62,22 +114,20 @@ export const generateResume = async (req, res) => {
             return `Transmission #${index + 1} (${dateStr}): "${p.caption || 'Project release'}" [Endorsements: ${likesCount} likes, ${commentsCount} comments]`;
         }).join("\n\n");
 
-        const prompt = `You are a world-class executive tech recruiter and resume strategist.
-Analyze the following professional social media transmissions and profile data for "${user.username}".
-User Bio: "${user.bio || 'Not provided'}"
-
-Transmissions & Work Log:
+        const prompt = `Transmissions & Work Log:
 ${formattedPosts}
 
 Tasks:
 1. "headline": Formulate a crisp, modern professional title (e.g. "Senior Full-Stack Engineer & Cloud Architect").
-2. "ai_summary": Write a powerful, high-impact 2-3 sentence executive career summary highlighting technical acumen, real achievements, and architectural maturity.
-3. "skills": Extract the top 6 to 10 technical competencies, frameworks, tools, and methodologies clearly demonstrated in these transmissions.
+2. "ai_summary": Write a powerful, high-impact 2-3 sentence executive career summary highlighting technical acumen, real achievements, and architectural maturity. Incorporate visually verified capabilities (e.g., modern UI design systems, clean architectural diagrams, responsive dashboards).
+3. "skills": Extract the top 8 to 12 technical competencies, frameworks, tools, and methodologies clearly demonstrated in these transmissions and visual artifacts.
 4. "highlights": Synthesize 2 to 4 impressive, action-oriented resume accomplishment bullet points based on the posts:
    - "title": Clean title for the project or technical milestone
    - "detail": Action-driven description with quantifiable impact and technologies
    - "skills": Array of 2 to 3 key technologies used in this highlight
+   - "visualVerified": true if confirmed via visual inspection of screenshots
 5. "domains": Identify 2 to 3 overarching domain specializations (e.g., "Full-Stack Development", "Cloud Infrastructure", "System Design").
+6. "visual_insights": An array of 2 to 3 concise bullet points specifically describing what was visually verified from the screenshots (e.g., "Visually verified: High-density responsive analytics dashboard utilizing modern dark-mode aesthetic and chart widgets", "Visually verified: Microservices event-bus architecture topology with Redis & Kafka message brokers").
 
 Return strictly valid raw JSON following this schema:
 {
@@ -88,16 +138,20 @@ Return strictly valid raw JSON following this schema:
     {
       "title": "string",
       "detail": "string",
-      "skills": ["string"]
+      "skills": ["string"],
+      "visualVerified": true
     }
   ],
-  "domains": ["string"]
+  "domains": ["string"],
+  "visual_insights": ["string"]
 }`;
 
-        console.log(`[AI Resume] Generating resume for @${user.username} with ${posts.length} transmissions...`);
+        console.log(`[AI Resume] Generating multimodal resume for @${user.username} with ${posts.length} transmissions and ${analyzedImagesCount} visual screenshots...`);
+        
         const { data, model, keyIndex } = await generateJsonWithGemini(
             prompt,
-            "You are an ATS-compliant AI resume parser and executive career writer. Always return strict, valid raw JSON."
+            "You are an ATS-compliant AI resume parser and multimodal career architect. Always return strict, valid raw JSON.",
+            { parts: analyzedImagesCount > 0 ? multimodalParts : null }
         );
 
         // Sanitize and structure result
@@ -107,6 +161,9 @@ Return strictly valid raw JSON following this schema:
             skills: Array.isArray(data.skills) ? data.skills.slice(0, 12) : [],
             highlights: Array.isArray(data.highlights) ? data.highlights : [],
             domains: Array.isArray(data.domains) ? data.domains : ["Software Engineering"],
+            visual_insights: Array.isArray(data.visual_insights) ? data.visual_insights : [],
+            visualArtifactsAnalyzed: analyzedImagesCount,
+            isVisionAnalyzed: analyzedImagesCount > 0,
             model: model || "gemini-2.5-flash",
             keySlotUsed: keyIndex,
             generatedAt: new Date()
@@ -118,11 +175,11 @@ Return strictly valid raw JSON following this schema:
         user.resume_data = sanitizedResume;
         await user.save();
 
-        console.log(`[AI Resume] Successfully generated and saved resume for @${user.username} using ${model} (Key #${keyIndex})`);
+        console.log(`[AI Resume] Successfully generated and saved multimodal resume for @${user.username} using ${model} (${analyzedImagesCount} images visually analyzed)`);
 
         return res.status(200).json({
             success: true,
-            message: `Resume generated successfully using ${model}`,
+            message: `Resume generated successfully using ${model}${analyzedImagesCount > 0 ? ` (${analyzedImagesCount} project screenshots analyzed)` : ''}`,
             resume: sanitizedResume,
             user
         });
@@ -228,22 +285,47 @@ export const simulateJobFit = async (req, res) => {
         const posts = await Post.find({ author: userId }).sort({ createdAt: -1 }).limit(10);
         const postsText = posts.map((p, i) => `#${i + 1}: "${p.caption}" [Tags: ${p.tags?.join(', ') || 'N/A'}, Repo: ${p.githubUrl || 'N/A'}]`).join("\n");
 
-        const prompt = `You are a Principal Tech Recruiter and ATS Auditor.
-A candidate is evaluating their fit for this target job opportunity:
-TARGET JOB DESCRIPTION / REQUIREMENTS:
+        // 🖼️ Multimodal Vision: Fetch up to 3 project screenshots for visual verification
+        const postsWithImages = posts.filter(p => p.image && typeof p.image === "string").slice(0, 3);
+        const imageFetchPromises = postsWithImages.map(p => fetchImageAsBase64(p.image, 4000));
+        const imageResults = await Promise.allSettled(imageFetchPromises);
+
+        const multimodalParts = [];
+        let analyzedImagesCount = 0;
+
+        multimodalParts.push({
+            text: `You are an elite Principal Tech Recruiter, System Architect, and ATS Job Match Auditor.
+Target Job Requirements:
 """
 ${jobDescription.substring(0, 4000)}
 """
 
-CANDIDATE PROVEN RECORD ON ZOCIAL:
+Candidate Info:
 Candidate Name: ${user.username}
 Bio: ${user.bio || 'Not provided'}
 Target Title: ${user.targetRole || user.resume_data?.headline || 'Software Engineer'}
 Skills on Record: ${user.skills?.join(', ') || 'None'}
-Verified Transmissions & Proof-of-Work:
+Verified Transmissions Log:
 ${postsText || 'No transmissions logged yet.'}
 
-Analyze the genuine match percentage between their demonstrated capabilities and the job requirements.
+Inspect BOTH the written candidate record AND the attached visual proof-of-work project screenshots (UI dashboards, architecture diagrams, code proofs).`
+        });
+
+        for (let i = 0; i < postsWithImages.length; i++) {
+            const p = postsWithImages[i];
+            const fetchRes = imageResults[i];
+            if (fetchRes.status === "fulfilled" && fetchRes.value) {
+                analyzedImagesCount++;
+                multimodalParts.push({
+                    text: `\n[Candidate Project Screenshot Artifact #${analyzedImagesCount}]
+Caption: "${p.caption || 'Project release'}" | Tags: ${p.tags?.join(', ') || 'N/A'}
+The screenshot below shows the actual visual proof-of-work (UI interface, architecture diagram, or code proof) for this project:`
+                });
+                multimodalParts.push(fetchRes.value);
+            }
+        }
+
+        const prompt = `Evaluate the genuine match percentage between the candidate's demonstrated capabilities (including visual project proofs) and the target job requirements.
 Be rigorous, encouraging, and actionable.
 
 Return strictly raw valid JSON adhering to this schema:
@@ -252,6 +334,9 @@ Return strictly raw valid JSON adhering to this schema:
   "matchTier": "Strong Match" | "Moderate Match" | "Developing Match",
   "matchedSkills": ["Skill 1", "Skill 2", "Skill 3"],
   "missingSkills": ["Missing Skill 1", "Missing Skill 2"],
+  "visualEvidence": [
+    "Specific technical capability visually confirmed from project screenshots (e.g. 'Visually verified: Modern responsive dashboard layout and chart components matching frontend requirements')"
+  ],
   "actionableRecommendations": [
     "What specific technical project or transmission they should post to bridge the gap"
   ],
@@ -262,15 +347,20 @@ Return strictly raw valid JSON adhering to this schema:
   ]
 }`;
 
-        console.log(`[Job-Fit Scanner] Running simulation for @${user.username}...`);
+        console.log(`[Job-Fit Scanner] Running multimodal simulation for @${user.username} with ${analyzedImagesCount} project screenshots...`);
         const { data, model } = await generateJsonWithGemini(
             prompt,
-            "You are an ATS Job Match Auditor. Output strictly valid JSON."
+            "You are an ATS Job Match Auditor and Multimodal Career Assessor. Output strictly valid JSON.",
+            { parts: analyzedImagesCount > 0 ? multimodalParts : null }
         );
 
         return res.status(200).json({
             success: true,
-            analysis: data,
+            analysis: {
+                ...data,
+                visualArtifactsAnalyzed: analyzedImagesCount,
+                isVisionAnalyzed: analyzedImagesCount > 0
+            },
             model
         });
 

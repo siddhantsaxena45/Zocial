@@ -9,7 +9,7 @@ import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { 
   Sparkles, Loader2, CheckCircle2, AlertTriangle, 
-  HelpCircle, Copy, Check, Target, Lightbulb 
+  HelpCircle, Copy, Check, Target, Lightbulb, Eye 
 } from "lucide-react";
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -71,9 +71,14 @@ const JobFitModal = ({ open, setOpen }) => {
               <Target className="h-5 w-5 text-indigo-600" />
               AI Job-Fit Simulator & Skills Gap Scanner
             </span>
-            <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-              Gemini Powered
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                100% Free
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                Gemini Powered
+              </span>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -155,6 +160,20 @@ const JobFitModal = ({ open, setOpen }) => {
                 </div>
               </div>
             </div>
+
+            {/* Visually Verified Evidence */}
+            {analysis.visualEvidence?.length > 0 && (
+              <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-200/80 space-y-2">
+                <span className="font-bold text-emerald-900 flex items-center gap-1.5 uppercase text-[10px] tracking-wider">
+                  <Eye className="h-3.5 w-3.5 text-emerald-600" /> Visually Verified From Transmissions ({analysis.visualArtifactsAnalyzed || 1} Proofs)
+                </span>
+                <ul className="space-y-1.5 text-xs text-slate-700 font-medium pl-4 list-disc">
+                  {analysis.visualEvidence.map((ev, i) => (
+                    <li key={i}>{ev}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Actionable Project Suggestions */}
             {analysis.actionableRecommendations?.length > 0 && (

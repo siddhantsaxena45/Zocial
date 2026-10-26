@@ -71,8 +71,8 @@ const ZocialScout = () => {
           <div className="absolute -right-20 -top-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="relative z-10 max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-black uppercase tracking-wider">
-              <Sparkles className="h-3.5 w-3.5 text-indigo-400" /> Zocial Scout • B2B Talent Search Engine
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-black uppercase tracking-wider">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-400" /> Zocial Scout • 100% Free & Open Talent Engine
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
               Source Verified Builders with Proof-of-Work
