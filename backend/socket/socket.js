@@ -52,12 +52,13 @@ io.on("connection", (socket) => {
   });
 
   // Video offer
-  socket.on("video-offer", ({ to, offer }) => {
+  socket.on("video-offer", ({ to, offer, userDetails }) => {
     const receiverSocketId = getReciverId(to);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("video-offer", {
         from: userId,
         offer,
+        userDetails,
       });
     }
   });

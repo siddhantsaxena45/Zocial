@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { FaHeart, FaComment } from "react-icons/fa";
-import { UserPlus, UserMinus, UserCheck, Network } from "lucide-react"; // Verified dependency
+import { UserPlus, UserMinus, UserCheck, Network, Handshake, ShieldCheck } from "lucide-react"; // Verified dependency
 import axios from "axios";
 import { markAllNotificationsSeen } from "@/redux/rtnSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -82,12 +82,16 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                              notification.type === 'comment' ? 'bg-indigo-500' :
                              notification.type === 'connectionRequest' ? 'bg-amber-500' :
                              notification.type === 'connectionAccepted' ? 'bg-emerald-500' :
+                             notification.type === 'synergyTag' ? 'bg-purple-600' :
+                             notification.type === 'vouchAccepted' ? 'bg-amber-600' :
                              'bg-slate-400'
                          }`}>
                             {notification.type === 'like' && <FaHeart className="text-white text-[8px]" />}
                             {notification.type === 'comment' && <FaComment className="text-white text-[8px]" />}
                             {notification.type === 'connectionRequest' && <Network className="text-white h-2 w-2" />}
                             {notification.type === 'connectionAccepted' && <UserCheck className="text-white h-2 w-2" />}
+                            {notification.type === 'synergyTag' && <Handshake className="text-white h-2 w-2" />}
+                            {notification.type === 'vouchAccepted' && <ShieldCheck className="text-white h-2 w-2" />}
                          </div>
                     </div>
                   </div>
@@ -105,6 +109,8 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                        notification.type === 'comment' ? 'analyzed your transmission' :
                        notification.type === 'connectionRequest' ? 'requested profile synergy' :
                        notification.type === 'connectionAccepted' ? 'accepted your synergy request' :
+                       notification.type === 'synergyTag' ? 'tagged you as collaborator on a transmission' :
+                       notification.type === 'vouchAccepted' ? 'verified peer synergy on your transmission' :
                        'updated their connection'}
                     </p>
                     <span className="text-[10px] text-slate-400 font-medium mt-0.5 italic">
@@ -112,6 +118,8 @@ const NotificationPopover = ({ likeNotification = [], children }) => {
                          notification.type === 'comment' ? 'Collaborative Insight' :
                          notification.type === 'connectionRequest' ? 'Network Opportunity' :
                          notification.type === 'connectionAccepted' ? 'Neural Link Established' :
+                         notification.type === 'synergyTag' ? 'Synergy Attribution' :
+                         notification.type === 'vouchAccepted' ? 'Verified Synergy' :
                          'Network Update'}
                     </span>
                   </div>

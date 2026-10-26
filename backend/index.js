@@ -21,7 +21,9 @@ app.disable("x-powered-by");
 
 app.use(helmet({
     contentSecurityPolicy: false, // Managed by frontend hosting
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false
 }));
 
 // 🔒 2. CORS Allowlist

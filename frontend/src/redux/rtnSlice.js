@@ -25,7 +25,7 @@ const rtnSlice = createSlice({
           );
           state.likeNotification.push({ ...notif, seen: false, timestamp: Date.now() });
         }
-        else if (notif.type === "like" || notif.type === "follow" || notif.type === "unfollow" || notif.type === "connectionRequest" || notif.type === "comment") {
+        else if (notif.type === "like" || notif.type === "follow" || notif.type === "unfollow" || notif.type === "connectionRequest" || notif.type === "comment" || notif.type === "synergyTag" || notif.type === "vouchAccepted") {
           // De-duplication Check: If user already has a notification of this human/post pair
           const existingIndex = state.likeNotification.findIndex(
             (n) => 

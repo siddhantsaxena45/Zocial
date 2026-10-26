@@ -8,6 +8,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setSelectedUser } from "@/redux/authSlice";
 import { toast } from "sonner";
 import CreatePost from "./CreatePost";
 
@@ -18,6 +20,7 @@ const BountyHub = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const fetchBounties = async () => {
     try {
@@ -52,10 +55,16 @@ const BountyHub = () => {
   });
 
   const handleCommission = (bounty) => {
-    const creatorName = bounty.author?.username || "creator";
+    const creator = bounty.author;
+    const creatorName = creator?.username || "creator";
     const amount = bounty.bountyAmount ? ` for ${bounty.bountyAmount}` : "";
     const typeLabel = bounty.bountyType === "task_bounty" ? "open bounty task" : "deliverable service";
     
+    if (creator) {
+      localStorage.setItem("zocial_chat_target", JSON.stringify(creator));
+      dispatch(setSelectedUser(creator));
+    }
+
     // Store prepopulated draft in localStorage for chat
     localStorage.setItem(
       "zocial_chat_draft", 
@@ -66,11 +75,11 @@ const BountyHub = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pt-20 pb-16 px-4 md:px-10">
+    <div className="w-full py-4 md:py-8 bg-transparent">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Hero Header */}
-        <div className="relative rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 text-white p-8 md:p-12 overflow-hidden shadow-2xl border border-indigo-500/20">
+        <div className="relative rounded-3xl bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-900 text-white p-8 md:p-12 overflow-hidden shadow-2xl border border-purple-500/20">
           <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute right-12 top-8 hidden lg:block opacity-20">
             <DollarSign className="w-64 h-64 text-indigo-400" />

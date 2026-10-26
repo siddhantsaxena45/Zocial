@@ -128,10 +128,15 @@ export const getAllPost = async (req, res) => {
             return res.status(404).json({ message: "User not found", success: false });
         }
 
-        // Only fetch posts from self or followed professionals
+        // Only fetch posts from self, followed professionals, or posts where followed professionals are verified collaborators
         const allowedAuthors = [...(user.following || []), userId];
 
-        const posts = await Post.find({ author: { $in: allowedAuthors } })
+        const posts = await Post.find({
+            $or: [
+                { author: { $in: allowedAuthors } },
+                { collaborator: { $in: allowedAuthors }, vouchStatus: 'accepted' }
+            ]
+        })
             .sort({ createdAt: -1 })
             .populate({ path: 'author', select: 'username profilepicture bio' })
             .populate({ path: 'collaborator', select: 'username profilepicture bio' })

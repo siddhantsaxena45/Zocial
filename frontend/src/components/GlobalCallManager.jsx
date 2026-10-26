@@ -152,8 +152,13 @@ const GlobalCallManager = () => {
     setIsCallAccepted(false);
   };
 
-  const startCall = async () => {
-    if (activeCall || loading || !selectedUser?._id) return;
+  const startCall = async (overrideTarget = null) => {
+    const target = overrideTarget || selectedUser;
+    if (activeCall || loading) return;
+    if (!target?._id) {
+      toast.error("Please open a conversation to start video call");
+      return;
+    }
     setLoading(true);
     try {
       dispatch(setActiveCall(true));
@@ -169,17 +174,18 @@ const GlobalCallManager = () => {
 
       pc.onicecandidate = (e) => {
         if (e.candidate && socket) {
-          socket.emit("ice-candidate", { to: selectedUser._id, candidate: e.candidate });
+          socket.emit("ice-candidate", { to: target._id, candidate: e.candidate });
         }
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socket.emit("video-offer", { to: selectedUser._id, offer: pc.localDescription, userDetails: loggedInUser });
+      socket.emit("video-offer", { to: target._id, offer: pc.localDescription, userDetails: loggedInUser });
 
       peerConnection.current = pc;
     } catch (err) {
       console.error("Error starting call:", err);
+      toast.error(err.message || "Camera/microphone access required for video call");
       endCall(false);
     } finally {
       setLoading(false);
@@ -305,6 +311,19 @@ const GlobalCallManager = () => {
   }, [socket]);
 
   useEffect(() => {
+    const handleInitiate = (e) => {
+      const target = e.detail?.targetUser || selectedUser;
+      if (target?._id) {
+        startCall(target);
+      } else {
+        toast.error("Please open a conversation to start video call");
+      }
+    };
+    window.addEventListener("initiate-video-call", handleInitiate);
+    return () => window.removeEventListener("initiate-video-call", handleInitiate);
+  }, [selectedUser, activeCall, loading, facingMode, socket, loggedInUser]);
+
+  useEffect(() => {
     let shouldRing = false;
 
     if (incomingCall && !activeCall) {
@@ -427,20 +446,20 @@ const GlobalCallManager = () => {
       )}
 
       <Dialog open={activeCall} onOpenChange={(val) => !val && endCall(true)}>
-        <DialogContent className="w-[96vw] max-w-5xl h-[88vh] p-4 sm:p-6 bg-slate-950 border border-slate-800 text-white rounded-3xl overflow-hidden z-[9999] flex flex-col justify-between shadow-2xl">
-          <DialogHeader className="p-0 flex flex-row items-center justify-between border-b border-slate-800/80 pb-3">
+        <DialogContent className="w-[96vw] max-w-5xl h-[90dvh] max-h-[92dvh] p-3 sm:p-6 bg-slate-950 border border-purple-500/30 text-white rounded-3xl overflow-hidden z-[9999] flex flex-col justify-between shadow-2xl">
+          <DialogHeader className="p-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3 shrink-0">
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
-              <DialogTitle className="text-sm font-black uppercase tracking-wider text-white">
+              <DialogTitle className="text-xs sm:text-sm font-black uppercase tracking-wider text-white truncate max-w-[220px] sm:max-w-md">
                 Synergy Video Call • {selectedUser?.username || callerInfo?.userDetails?.username || "Collaborator"}
               </DialogTitle>
             </div>
 
             {/* Mode Switcher Tabs */}
-            <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+            <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px] font-bold overflow-x-auto max-w-full">
               <button
                 onClick={() => setCallMode("video")}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ${
                   callMode === "video" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -448,7 +467,7 @@ const GlobalCallManager = () => {
               </button>
               <button
                 onClick={() => setCallMode("pair_code")}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ${
                   callMode === "pair_code" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -456,7 +475,7 @@ const GlobalCallManager = () => {
               </button>
               <button
                 onClick={() => setCallMode("whiteboard")}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ${
                   callMode === "whiteboard" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
                 }`}
               >

@@ -8,6 +8,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setSelectedUser } from "@/redux/authSlice";
 import { toast } from "sonner";
 import JobFitModal from "./JobFitModal";
 
@@ -20,6 +22,7 @@ const ZocialScout = () => {
   const [selectedCandidateForFit, setSelectedCandidateForFit] = useState(null);
   const [jobFitOpen, setJobFitOpen] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const searchCandidates = async () => {
     try {
@@ -55,19 +58,22 @@ const ZocialScout = () => {
   };
 
   const startChatWithCandidate = (candidate) => {
+    localStorage.setItem("zocial_chat_target", JSON.stringify(candidate));
+    dispatch(setSelectedUser(candidate));
     localStorage.setItem(
       "zocial_chat_draft", 
       `Hi @${candidate.username}, I reviewed your proof-of-work on Zocial Scout. We're looking for a ${candidate.targetRole || "developer"} and would love to connect!`
     );
     navigate("/chat");
+    toast.success(`Opening chat with @${candidate.username}`);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pt-20 pb-16 px-4 md:px-10">
+    <div className="w-full py-4 md:py-8 bg-transparent">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Recruiter Portal Hero */}
-        <div className="relative rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-8 md:p-12 overflow-hidden shadow-2xl border border-indigo-500/20">
+        <div className="relative rounded-3xl bg-gradient-to-br from-purple-950 via-slate-950 to-indigo-950 text-white p-8 md:p-12 overflow-hidden shadow-2xl border border-purple-500/20">
           <div className="absolute -right-20 -top-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="relative z-10 max-w-2xl space-y-4">
