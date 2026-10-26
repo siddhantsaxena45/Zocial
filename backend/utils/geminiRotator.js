@@ -53,10 +53,94 @@ const MODEL_FALLBACK_CHAIN = [
 ];
 
 /**
+ * 🖼️ Multimodal Vision Helper: Fetches an image from a URL,
+ * optimizes Cloudinary URLs for fast transmission, and encodes it into Gemini's inlineData format.
+ * 
+ * @param {string} imageUrl - HTTPS URL of the image
+ * @param {number} timeoutMs - Timeout in milliseconds (default 5000)
+ * @returns {Promise<{ inlineData: { mimeType: string, data: string } } | null>}
+ */
+export const fetchImageAsBase64 = async (imageUrl, timeoutMs = 5000) => {
+    try {
+        if (!imageUrl || typeof imageUrl !== "string" || !imageUrl.startsWith("http")) {
+            return null;
+        }
+
+        // Optimize Cloudinary URLs for fast multimodal processing (width 800, quality auto, jpeg)
+        let fetchUrl = imageUrl;
+        if (fetchUrl.includes("/upload/") && !fetchUrl.includes("/upload/w_")) {
+            fetchUrl = fetchUrl.replace("/upload/", "/upload/w_800,c_limit,q_auto,f_jpg/");
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        let response;
+        try {
+            response = await fetch(fetchUrl, { signal: controller.signal });
+        } catch (fetchErr) {
+            clearTimeout(timeoutId);
+            // Fallback to original URL if transformed URL failed
+            if (fetchUrl !== imageUrl) {
+                const fallbackController = new AbortController();
+                const fallbackTimeout = setTimeout(() => fallbackController.abort(), timeoutMs);
+                try {
+                    response = await fetch(imageUrl, { signal: fallbackController.signal });
+                } catch {
+                    return null;
+                } finally {
+                    clearTimeout(fallbackTimeout);
+                }
+            } else {
+                return null;
+            }
+        } finally {
+            clearTimeout(timeoutId);
+        }
+
+        if (!response || !response.ok) {
+            // If transformation returned 4xx, try raw URL
+            if (fetchUrl !== imageUrl) {
+                const fallbackRes = await fetch(imageUrl).catch(() => null);
+                if (fallbackRes && fallbackRes.ok) {
+                    response = fallbackRes;
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const base64Data = Buffer.from(arrayBuffer).toString("base64");
+        
+        let mimeType = "image/jpeg";
+        const contentType = response.headers.get("content-type");
+        if (contentType) {
+            if (contentType.includes("png")) mimeType = "image/png";
+            else if (contentType.includes("webp")) mimeType = "image/webp";
+            else if (contentType.includes("gif")) mimeType = "image/gif";
+        }
+
+        return {
+            inlineData: {
+                mimeType,
+                data: base64Data
+            }
+        };
+    } catch (err) {
+        console.warn(`[Gemini Multimodal] Failed to prepare image from ${imageUrl}:`, err.message);
+        return null;
+    }
+};
+
+/**
  * Executes content generation using Gemini REST API with automated key rotation and model fallback.
+ * Supports both text-only prompts and multimodal input (text + images).
  * 
  * @param {string} prompt - Prompt text to send
- * @param {object} options - Generation options (systemInstruction, temperature, timeoutMs)
+ * @param {object} options - Generation options (systemInstruction, temperature, timeoutMs, parts)
  * @returns {Promise<{ text: string, model: string, keyIndex: number }>}
  */
 export const generateWithGemini = async (prompt, options = {}) => {
@@ -88,10 +172,15 @@ export const generateWithGemini = async (prompt, options = {}) => {
 
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
                 
+                // Construct parts payload supporting multimodal images
+                const partsPayload = (options.parts && Array.isArray(options.parts) && options.parts.length > 0)
+                    ? options.parts
+                    : [{ text: prompt }];
+
                 const bodyPayload = {
                     contents: [
                         {
-                            parts: [{ text: prompt }]
+                            parts: partsPayload
                         }
                     ],
                     generationConfig: {
@@ -182,16 +271,29 @@ export const generateWithGemini = async (prompt, options = {}) => {
 
 /**
  * Generates and parses strict JSON output using Gemini
+ * Supports both text prompts and multimodal parts (text + images)
+ * 
+ * @param {string} prompt - Primary prompt or JSON instruction
+ * @param {string} systemInstruction - Optional system persona instruction
+ * @param {object} options - Options including parts, temperature, timeoutMs
  */
-export const generateJsonWithGemini = async (prompt, systemInstruction = "") => {
+export const generateJsonWithGemini = async (prompt, systemInstruction = "", options = {}) => {
     const fullPrompt = `${prompt}\n\nIMPORTANT: Output strictly valid JSON conforming to RFC 8259. Do NOT wrap in markdown code fences or backticks.`;
     
+    let parts = options.parts ? [...options.parts] : null;
+    if (parts && Array.isArray(parts) && parts.length > 0) {
+        // Append prompt and JSON instruction as the final text part for the multimodal input
+        parts.push({ text: fullPrompt });
+    }
+
     const result = await generateWithGemini(fullPrompt, {
         systemInstruction: systemInstruction || "You are an ATS-compliant JSON generator. Always return strict, valid raw JSON.",
         temperature: 0.1,
         maxOutputTokens: 8192,
         responseMimeType: "application/json",
-        thinkingBudget: 0
+        thinkingBudget: 0,
+        ...options,
+        parts: parts || null
     });
 
     let rawText = result.text.trim();
@@ -249,5 +351,6 @@ export default {
     getGeminiApiKeys,
     generateWithGemini,
     generateJsonWithGemini,
+    fetchImageAsBase64,
     MODEL_FALLBACK_CHAIN
 };
