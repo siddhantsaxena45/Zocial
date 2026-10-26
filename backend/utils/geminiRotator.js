@@ -95,10 +95,20 @@ export const generateWithGemini = async (prompt, options = {}) => {
                         }
                     ],
                     generationConfig: {
-                        temperature: options.temperature !== undefined ? options.temperature : 0.4,
-                        maxOutputTokens: options.maxOutputTokens || 2048,
+                        temperature: options.temperature !== undefined ? options.temperature : 0.2,
+                        maxOutputTokens: options.maxOutputTokens || 8192,
                     }
                 };
+
+                if (options.responseMimeType) {
+                    bodyPayload.generationConfig.responseMimeType = options.responseMimeType;
+                }
+
+                if (model.includes("2.5") && (options.thinkingBudget !== undefined || options.responseMimeType === "application/json")) {
+                    bodyPayload.generationConfig.thinkingConfig = {
+                        thinkingBudget: options.thinkingBudget !== undefined ? options.thinkingBudget : 0
+                    };
+                }
 
                 if (options.systemInstruction) {
                     bodyPayload.systemInstruction = {
@@ -174,11 +184,14 @@ export const generateWithGemini = async (prompt, options = {}) => {
  * Generates and parses strict JSON output using Gemini
  */
 export const generateJsonWithGemini = async (prompt, systemInstruction = "") => {
-    const fullPrompt = `${prompt}\n\nIMPORTANT: Output ONLY pure raw JSON. Do NOT wrap in markdown code fences or backticks like \`\`\`json.`;
+    const fullPrompt = `${prompt}\n\nIMPORTANT: Output strictly valid JSON conforming to RFC 8259. Do NOT wrap in markdown code fences or backticks.`;
     
     const result = await generateWithGemini(fullPrompt, {
-        systemInstruction: systemInstruction || "You are a professional JSON generator. You must return strictly valid JSON.",
-        temperature: 0.2
+        systemInstruction: systemInstruction || "You are an ATS-compliant JSON generator. Always return strict, valid raw JSON.",
+        temperature: 0.1,
+        maxOutputTokens: 8192,
+        responseMimeType: "application/json",
+        thinkingBudget: 0
     });
 
     let rawText = result.text.trim();
@@ -209,7 +222,23 @@ export const generateJsonWithGemini = async (prompt, systemInstruction = "") => 
                     keyIndex: result.keyIndex
                 };
             } catch (innerErr) {
-                console.error("[Gemini Engine] Failed to parse extracted JSON substring:", innerErr);
+                // Heuristic repair: fix unclosed quotes or missing closing braces
+                try {
+                    let repaired = jsonMatch[0];
+                    const quotes = (repaired.match(/(?<!\\)"/g) || []).length;
+                    if (quotes % 2 !== 0) repaired += '"';
+                    const openB = (repaired.match(/\{/g) || []).length;
+                    const closeB = (repaired.match(/\}/g) || []).length;
+                    for (let i = 0; i < (openB - closeB); i++) repaired += "}";
+                    const parsed = JSON.parse(repaired);
+                    return {
+                        data: parsed,
+                        model: result.model,
+                        keyIndex: result.keyIndex
+                    };
+                } catch (repairErr) {
+                    console.error("[Gemini Engine] JSON heuristic repair failed:", repairErr);
+                }
             }
         }
         throw new Error(`Failed to parse Gemini response as JSON: ${parseError.message}\nRaw: ${rawText.substring(0, 300)}`);

@@ -16,6 +16,7 @@ dotenv.config({});
 const port = process.env.PORT || 8000;
 
 // 🔒 1. Express Security Hardening & Headers
+app.set("trust proxy", 1); // Enable proxy trusting for Render/Vercel reverse proxies
 app.disable("x-powered-by");
 
 app.use(helmet({
@@ -55,6 +56,7 @@ const generalLimiter = rateLimit({
     max: 300, // limit each IP to 300 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
     message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." }
 });
 app.use("/api/v1/", generalLimiter);
@@ -65,6 +67,7 @@ const authLimiter = rateLimit({
     max: 20, // 20 attempts per window
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
     message: { success: false, message: "Too many authentication attempts. Please try again after 15 minutes." }
 });
 app.use("/api/v1/user/login", authLimiter);
@@ -77,6 +80,7 @@ const resumeLimiter = rateLimit({
     max: 10, // 10 generations per window
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
     message: { success: false, message: "AI resume generation limit reached. Please wait a few minutes before regenerating." }
 });
 app.use("/api/v1/resume/generate", resumeLimiter);
