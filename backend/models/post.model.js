@@ -43,6 +43,10 @@ const postSchema = new mongoose.Schema({
         default: "javascript",
     },
     // 🤝 Synergy Collaborator & Peer-Vouching (Anti-Fraud)
+    collaborator: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
     collaboratorUsername: {
         type: String,
         default: "",

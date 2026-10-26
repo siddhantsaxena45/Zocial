@@ -879,3 +879,48 @@ export const scoutCandidates = async (req, res) => {
         return res.status(500).json({ message: "Server error querying candidates", success: false });
     }
 };
+
+/**
+ * 🔍 User Search & Collaborator Autocomplete
+ * Finds connected synergy partners and network builders for collaborator tagging.
+ */
+export const searchUsers = async (req, res) => {
+    try {
+        const query = (req.query.q || req.query.query || "").trim();
+        const currentUserId = req.id;
+
+        // If query is empty, return the user's connected synergy partners (following)
+        if (!query) {
+            const currentUser = await User.findById(currentUserId).populate({
+                path: "following",
+                select: "username profilepicture bio targetRole skills"
+            });
+            return res.status(200).json({
+                success: true,
+                users: currentUser?.following?.slice(0, 15) || []
+            });
+        }
+
+        const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(safeQuery, 'i');
+
+        const users = await User.find({
+            _id: { $ne: currentUserId },
+            $or: [
+                { username: regex },
+                { targetRole: regex },
+                { skills: regex }
+            ]
+        })
+        .select("username profilepicture bio targetRole skills")
+        .limit(10);
+
+        return res.status(200).json({
+            success: true,
+            users
+        });
+    } catch (error) {
+        console.error("[Search Users Error]", error);
+        return res.status(500).json({ message: "Server error searching users", success: false });
+    }
+};

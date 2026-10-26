@@ -58,10 +58,11 @@ const Post = ({ post }) => {
     const [isliked, setIsLiked] = useState(userHasLiked)
     const [postlikes, setPostLikes] = useState(post.likes.length)
 
-    // Check if the logged-in user is designated as collaborator
-    const isDesignatedCollaborator = user && post.collaboratorUsername && (
-        user.username?.toLowerCase() === post.collaboratorUsername.toLowerCase() ||
-        (post.vouchedBy && (post.vouchedBy._id || post.vouchedBy) === user._id)
+    // Check if the logged-in user is designated as collaborator (by ObjectId or username)
+    const isDesignatedCollaborator = user && (
+        (post.collaborator && (post.collaborator._id || post.collaborator).toString() === user._id?.toString()) ||
+        (post.vouchedBy && (post.vouchedBy._id || post.vouchedBy).toString() === user._id?.toString()) ||
+        (post.collaboratorUsername && user.username?.toLowerCase() === post.collaboratorUsername.toLowerCase())
     );
 
     const handleVouch = async (action) => {

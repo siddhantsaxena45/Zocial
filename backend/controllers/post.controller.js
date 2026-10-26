@@ -18,6 +18,7 @@ export const addPost = async (req, res) => {
             tags, 
             codeSnippet,
             codeLanguage,
+            collaboratorId,
             collaboratorUsername, 
             collaboratorRole,
             isBounty, 
@@ -51,11 +52,15 @@ export const addPost = async (req, res) => {
 
         const cleanCollabUsername = (collaboratorUsername || "").replace(/^@/, "").trim();
         let targetCollaborator = null;
-        if (cleanCollabUsername) {
+        if (collaboratorId && isValidId(collaboratorId)) {
+            targetCollaborator = await User.findById(collaboratorId);
+        } else if (cleanCollabUsername) {
             targetCollaborator = await User.findOne({ 
                 username: new RegExp(`^${cleanCollabUsername}$`, 'i') 
             });
         }
+
+        const isLegitCollab = targetCollaborator && targetCollaborator._id.toString() !== authorId;
 
         const post = await Post.create({ 
             caption: sanitizedCaption, 
@@ -66,10 +71,11 @@ export const addPost = async (req, res) => {
             tags: parsedTags.slice(0, 10),
             codeSnippet: (codeSnippet || "").substring(0, 10000),
             codeLanguage: (codeLanguage || "javascript").toLowerCase(),
-            collaboratorUsername: cleanCollabUsername,
+            collaborator: isLegitCollab ? targetCollaborator._id : null,
+            collaboratorUsername: targetCollaborator ? targetCollaborator.username : cleanCollabUsername,
             collaboratorRole: (collaboratorRole || "Co-Developer").substring(0, 60),
-            vouchStatus: targetCollaborator && targetCollaborator._id.toString() !== authorId ? "pending" : "none",
-            vouchedBy: targetCollaborator && targetCollaborator._id.toString() !== authorId ? targetCollaborator._id : null,
+            vouchStatus: isLegitCollab ? "pending" : "none",
+            vouchedBy: null,
             isBounty: String(isBounty) === 'true',
             bountyAmount: (bountyAmount || "").trim(),
             bountyType: bountyType === 'task_bounty' ? 'task_bounty' : 'service_offered'
@@ -128,6 +134,7 @@ export const getAllPost = async (req, res) => {
         const posts = await Post.find({ author: { $in: allowedAuthors } })
             .sort({ createdAt: -1 })
             .populate({ path: 'author', select: 'username profilepicture bio' })
+            .populate({ path: 'collaborator', select: 'username profilepicture bio' })
             .populate({ path: 'comments', sort: { createdAt: -1 }, populate: { path: 'author', select: 'username profilepicture' } })
             .populate({ path: 'likes', select: 'username profilepicture' });
 
@@ -141,9 +148,15 @@ export const getAllPost = async (req, res) => {
 export const getUserPost = async (req, res) => {
     try {
         const userId = req.id;
-        const posts = await Post.find({ author: userId })
+        const posts = await Post.find({ 
+            $or: [
+                { author: userId },
+                { collaborator: userId, vouchStatus: 'accepted' }
+            ] 
+        })
             .sort({ createdAt: -1 })
             .populate({ path: 'author', select: 'username profilepicture bio' })
+            .populate({ path: 'collaborator', select: 'username profilepicture bio' })
             .populate({ path: 'comments', sort: { createdAt: -1 }, populate: { path: 'author', select: 'username profilepicture' } })
             .populate({ path: 'likes', select: 'username profilepicture' });
 
@@ -474,7 +487,8 @@ export const vouchPost = async (req, res) => {
         // Verify that this user is indeed the tagged collaborator
         const isTaggedByUsername = post.collaboratorUsername && 
             post.collaboratorUsername.toLowerCase() === currentUser.username.toLowerCase();
-        const isTaggedById = post.vouchedBy && post.vouchedBy.toString() === userId;
+        const isTaggedById = (post.collaborator && post.collaborator.toString() === userId) ||
+            (post.vouchedBy && post.vouchedBy.toString() === userId);
 
         if (!isTaggedByUsername && !isTaggedById) {
             return res.status(403).json({ 
@@ -486,7 +500,15 @@ export const vouchPost = async (req, res) => {
         if (action === "accept") {
             post.vouchStatus = "accepted";
             post.vouchedBy = userId;
+            post.collaborator = userId;
             await post.save();
+
+            // When accepted, add project to collaborator's profile so it appears on both profiles with verified synergy!
+            const collaboratorUser = await User.findById(userId);
+            if (collaboratorUser && !collaboratorUser.posts.includes(post._id)) {
+                collaboratorUser.posts.push(post._id);
+                await collaboratorUser.save();
+            }
 
             // Notify the original author
             await Notification.create({

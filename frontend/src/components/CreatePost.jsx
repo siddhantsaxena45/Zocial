@@ -11,7 +11,8 @@ import { readFileAsDataURL } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { 
   Loader2, Github, Globe, Tag, Users, DollarSign, 
-  ChevronDown, ChevronUp, ImagePlus, Sparkles, Code, FileCode 
+  ChevronDown, ChevronUp, ImagePlus, Sparkles, Code, FileCode,
+  Search, X, Check 
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -35,6 +36,11 @@ const CreatePost = ({ open, setOpen }) => {
   const [codeLanguage, setCodeLanguage] = useState("javascript");
   const [collaboratorUsername, setCollaboratorUsername] = useState("");
   const [collaboratorRole, setCollaboratorRole] = useState("Co-Developer");
+  const [selectedCollaborator, setSelectedCollaborator] = useState(null);
+  const [collabSearch, setCollabSearch] = useState("");
+  const [collabSearchResults, setCollabSearchResults] = useState([]);
+  const [isSearchingCollab, setIsSearchingCollab] = useState(false);
+  const [showCollabDropdown, setShowCollabDropdown] = useState(false);
   const [isBounty, setIsBounty] = useState(false);
   const [bountyAmount, setBountyAmount] = useState("");
   const [bountyType, setBountyType] = useState("service_offered");
@@ -42,6 +48,38 @@ const CreatePost = ({ open, setOpen }) => {
   const { user } = useSelector(state => state.auth);
   const { posts } = useSelector(state => state.post);
   const dispatch = useDispatch();
+
+  const searchCollaborators = async (query) => {
+    setCollabSearch(query);
+    try {
+      setIsSearchingCollab(true);
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/user/search?q=${encodeURIComponent(query)}`,
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        setCollabSearchResults(res.data.users || []);
+        setShowCollabDropdown(true);
+      }
+    } catch (err) {
+      console.error("Collaborator search error:", err);
+    } finally {
+      setIsSearchingCollab(false);
+    }
+  };
+
+  const handleSelectCollaborator = (collabUser) => {
+    setSelectedCollaborator(collabUser);
+    setCollaboratorUsername(collabUser.username);
+    setCollabSearch("");
+    setShowCollabDropdown(false);
+  };
+
+  const handleRemoveCollaborator = () => {
+    setSelectedCollaborator(null);
+    setCollaboratorUsername("");
+    setCollaboratorRole("Co-Developer");
+  };
 
   const fileChangeHandler = async (e) => {
     const file = e.target.files[0];
@@ -68,7 +106,11 @@ const CreatePost = ({ open, setOpen }) => {
       if (tags) formdata.append("tags", tags);
       if (codeSnippet) formdata.append("codeSnippet", codeSnippet);
       if (codeLanguage) formdata.append("codeLanguage", codeLanguage);
-      if (collaboratorUsername) {
+      if (selectedCollaborator) {
+        formdata.append("collaboratorId", selectedCollaborator._id);
+        formdata.append("collaboratorUsername", selectedCollaborator.username);
+        formdata.append("collaboratorRole", collaboratorRole);
+      } else if (collaboratorUsername) {
         formdata.append("collaboratorUsername", collaboratorUsername);
         formdata.append("collaboratorRole", collaboratorRole);
       }
@@ -99,6 +141,10 @@ const CreatePost = ({ open, setOpen }) => {
         setCodeLanguage('javascript');
         setCollaboratorUsername('');
         setCollaboratorRole('Co-Developer');
+        setSelectedCollaborator(null);
+        setCollabSearch('');
+        setCollabSearchResults([]);
+        setShowCollabDropdown(false);
         setIsBounty(false);
         setBountyAmount('');
         setBountyType('service_offered');
@@ -257,27 +303,131 @@ const CreatePost = ({ open, setOpen }) => {
                 />
               </div>
 
-              {/* Collaborator Tag & Role */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 bg-white rounded-lg px-2.5 py-1.5 border border-slate-200">
-                  <Users className="h-4 w-4 text-slate-500 shrink-0" />
-                  <input
-                    type="text"
-                    placeholder="Colleague @username"
-                    value={collaboratorUsername}
-                    onChange={(e) => setCollaboratorUsername(e.target.value)}
-                    className="w-full bg-transparent outline-none text-xs text-slate-700"
-                  />
-                </div>
-                {collaboratorUsername && (
-                  <div className="flex items-center gap-2 bg-white rounded-lg px-2.5 py-1.5 border border-slate-200">
-                    <input
-                      type="text"
-                      placeholder="Role (e.g. Co-Architect, UI/UX Lead)"
-                      value={collaboratorRole}
-                      onChange={(e) => setCollaboratorRole(e.target.value)}
-                      className="w-full bg-transparent outline-none text-xs text-slate-700"
-                    />
+              {/* 🤝 Synergy Collaborator Search & Tagging */}
+              <div className="space-y-2">
+                {selectedCollaborator ? (
+                  <div className="flex flex-col gap-2 p-2.5 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 border border-purple-200/90 rounded-xl shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7 border border-purple-200 shadow-xs">
+                          <AvatarImage src={selectedCollaborator.profilepicture || "https://github.com/shadcn.png"} />
+                          <AvatarFallback className="text-[10px] font-bold bg-purple-600 text-white">
+                            {selectedCollaborator.username?.[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                            @{selectedCollaborator.username}
+                            <span className="text-[9px] font-black uppercase tracking-wider text-purple-700 bg-purple-100 border border-purple-200 px-1.5 py-0.5 rounded-md">
+                              Tagged Collaborator
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {selectedCollaborator.targetRole || selectedCollaborator.bio || "Zocial Builder"}
+                          </span>
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={handleRemoveCollaborator} 
+                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                        title="Remove collaborator"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    
+                    {/* Role Selector & Quick Presets */}
+                    <div className="space-y-1.5 pt-2 border-t border-purple-100">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-800 shrink-0">Collaborator Role:</span>
+                        <input
+                          type="text"
+                          placeholder="e.g. Co-Architect, UI/UX Lead, Backend Engineer..."
+                          value={collaboratorRole}
+                          onChange={(e) => setCollaboratorRole(e.target.value)}
+                          className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 outline-none focus:ring-1 focus:ring-purple-400"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {["Frontend Lead", "Backend Architect", "UI/UX Designer", "Full-Stack Co-Dev", "DevOps & Cloud"].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setCollaboratorRole(preset)}
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-md transition-all ${
+                              collaboratorRole === preset 
+                                ? "bg-purple-600 text-white shadow-xs" 
+                                : "bg-white text-purple-700 hover:bg-purple-100 border border-purple-200"
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="flex items-center gap-2 bg-white rounded-lg px-2.5 py-1.5 border border-slate-200 focus-within:border-purple-400 transition-all">
+                      <Users className="h-4 w-4 text-purple-600 shrink-0" />
+                      <input
+                        type="text"
+                        placeholder="Tag Collaborator (Search Synergy connections by @username or role...)"
+                        value={collabSearch}
+                        onFocus={() => searchCollaborators(collabSearch)}
+                        onChange={(e) => searchCollaborators(e.target.value)}
+                        className="w-full bg-transparent outline-none text-xs text-slate-700 placeholder:text-slate-400"
+                      />
+                      {isSearchingCollab ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-500 shrink-0" />
+                      ) : (
+                        <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      )}
+                    </div>
+
+                    {/* Autocomplete Dropdown */}
+                    {showCollabDropdown && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-52 overflow-y-auto divide-y divide-slate-100">
+                        <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                          <span>Synergy Connections & Builders</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setShowCollabDropdown(false)}
+                            className="text-slate-400 hover:text-slate-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {collabSearchResults.length > 0 ? (
+                          collabSearchResults.map((u) => (
+                            <div
+                              key={u._id}
+                              onClick={() => handleSelectCollaborator(u)}
+                              className="flex items-center gap-2.5 p-2.5 hover:bg-purple-50 cursor-pointer transition-colors"
+                            >
+                              <Avatar className="h-8 w-8 border border-slate-100 shrink-0">
+                                <AvatarImage src={u.profilepicture || "https://github.com/shadcn.png"} />
+                                <AvatarFallback className="text-[10px] font-bold bg-indigo-50 text-indigo-700">
+                                  {u.username?.[0]?.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <span className="text-xs font-bold text-slate-900 truncate">@{u.username}</span>
+                                <span className="text-[10px] text-slate-500 truncate">{u.targetRole || u.bio || "Zocial Builder"}</span>
+                              </div>
+                              <span className="text-[10px] font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 shrink-0 hover:bg-purple-600 hover:text-white transition-colors">
+                                Tag Partner
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-xs text-slate-400 font-medium">
+                            No matching builders found for "{collabSearch}". Try a different name.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
