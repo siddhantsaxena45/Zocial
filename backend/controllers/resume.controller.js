@@ -9,20 +9,20 @@ import { generateJsonWithGemini, fetchImageAsBase64 } from "../utils/geminiRotat
  * 2.5 Flash (with automatic 10-key rotator and model cascade) to craft an ATS-ready resume.
  */
 
-export const generateResume = async (req, res) => {
+/**
+ * 📄 Core Multimodal AI Resume Builder
+ * Can be invoked internally (e.g. automatically on post create/delete) or via the API.
+ */
+export const buildResumeForUserInternal = async (targetUserId) => {
     try {
-        const targetUserId = req.params.id || req.id;
         const user = await User.findById(targetUserId).select("-password");
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found", success: false });
-        }
+        if (!user) return null;
 
         // Fetch user's posts sorted newest first
         const posts = await Post.find({ author: targetUserId }).sort({ createdAt: -1 });
 
         if (!posts || posts.length === 0) {
-            // Generate starter profile if user doesn't have posts yet
+            // Starter profile if user has no posts
             const starterResume = {
                 headline: user.bio || `${user.username} • Professional Specialist`,
                 ai_summary: user.bio 
@@ -50,22 +50,16 @@ export const generateResume = async (req, res) => {
             user.resume_data = starterResume;
             await user.save();
 
-            return res.status(200).json({
-                success: true,
-                message: "Created starter resume profile. Add technical posts for an AI deep dive!",
-                resume: starterResume,
-                user
-            });
+            return { resume: starterResume, user, success: true };
         }
 
-        // 🖼️ Multimodal Vision Preparation: Concurrently fetch and optimize post images
+        // 🖼️ Multimodal Vision Preparation: Concurrently fetch up to 5 post images
         const postsWithImages = posts.filter(p => p.image && typeof p.image === "string").slice(0, 5);
-        console.log(`[AI Multimodal Resume] Preparing up to ${postsWithImages.length} visual artifact screenshots for @${user.username}...`);
+        console.log(`[Auto-Resume] Preparing up to ${postsWithImages.length} visual artifact screenshots for @${user.username}...`);
 
         const imageFetchPromises = postsWithImages.map(p => fetchImageAsBase64(p.image, 5000));
         const imageResults = await Promise.allSettled(imageFetchPromises);
 
-        // Build multimodal parts array for Gemini
         const multimodalParts = [];
         let analyzedImagesCount = 0;
 
@@ -87,7 +81,6 @@ Inspect every attached image carefully:
 - **Credentials & Badges**: If an image is a certificate, hackathon award, or peer recognition, incorporate it into their highlights.`
         });
 
-        // Attach each successfully fetched image along with its project metadata
         for (let i = 0; i < postsWithImages.length; i++) {
             const p = postsWithImages[i];
             const fetchRes = imageResults[i];
@@ -106,7 +99,6 @@ The screenshot below shows the actual visual proof-of-work (UI interface, archit
             }
         }
 
-        // Format all posts as text log summary
         const formattedPosts = posts.slice(0, 15).map((p, index) => {
             const dateStr = p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : 'Recent';
             const likesCount = p.likes ? p.likes.length : 0;
@@ -127,7 +119,7 @@ Tasks:
    - "skills": Array of 2 to 3 key technologies used in this highlight
    - "visualVerified": true if confirmed via visual inspection of screenshots
 5. "domains": Identify 2 to 3 overarching domain specializations (e.g., "Full-Stack Development", "Cloud Infrastructure", "System Design").
-6. "visual_insights": An array of 2 to 3 concise bullet points specifically describing what was visually verified from the screenshots (e.g., "Visually verified: High-density responsive analytics dashboard utilizing modern dark-mode aesthetic and chart widgets", "Visually verified: Microservices event-bus architecture topology with Redis & Kafka message brokers").
+6. "visual_insights": An array of 2 to 3 concise bullet points specifically describing what was visually verified from the screenshots.
 
 Return strictly valid raw JSON following this schema:
 {
@@ -146,7 +138,7 @@ Return strictly valid raw JSON following this schema:
   "visual_insights": ["string"]
 }`;
 
-        console.log(`[AI Resume] Generating multimodal resume for @${user.username} with ${posts.length} transmissions and ${analyzedImagesCount} visual screenshots...`);
+        console.log(`[Auto-Resume] Generating multimodal resume for @${user.username} with ${posts.length} transmissions and ${analyzedImagesCount} visual screenshots...`);
         
         const { data, model, keyIndex } = await generateJsonWithGemini(
             prompt,
@@ -154,7 +146,6 @@ Return strictly valid raw JSON following this schema:
             { parts: analyzedImagesCount > 0 ? multimodalParts : null }
         );
 
-        // Sanitize and structure result
         const sanitizedResume = {
             headline: data.headline || `${user.username} • Technology Professional`,
             ai_summary: data.ai_summary || user.bio || "Dedicated professional with demonstrated technical capability.",
@@ -169,27 +160,20 @@ Return strictly valid raw JSON following this schema:
             generatedAt: new Date()
         };
 
-        // Persist to user record in MongoDB
         user.skills = sanitizedResume.skills;
         user.ai_summary = sanitizedResume.ai_summary;
         user.resume_data = sanitizedResume;
         await user.save();
 
-        console.log(`[AI Resume] Successfully generated and saved multimodal resume for @${user.username} using ${model} (${analyzedImagesCount} images visually analyzed)`);
-
-        return res.status(200).json({
-            success: true,
-            message: `Resume generated successfully using ${model}${analyzedImagesCount > 0 ? ` (${analyzedImagesCount} project screenshots analyzed)` : ''}`,
-            resume: sanitizedResume,
-            user
-        });
+        console.log(`[Auto-Resume] Successfully generated and saved multimodal resume for @${user.username} via ${model}`);
+        return { resume: sanitizedResume, user, success: true, model };
 
     } catch (error) {
-        console.error("[AI Resume Error]", error);
+        console.error("[Auto-Resume Error]", error);
 
         // Resilient Fallback: If AI generation fails, synthesize from transmissions & profile metadata
         try {
-            const user = await User.findById(req.params.id || req.id).populate("posts");
+            const user = await User.findById(targetUserId).populate("posts");
             if (user) {
                 const userPosts = user.posts || [];
                 const fallbackResume = {
@@ -216,17 +200,45 @@ Return strictly valid raw JSON following this schema:
                 user.resume_data = fallbackResume;
                 await user.save();
 
-                return res.status(200).json({
-                    success: true,
-                    message: "Resume generated successfully (Resilient Synthesis)",
-                    resume: fallbackResume,
-                    user
-                });
+                return { resume: fallbackResume, user, success: true, model: "resilience-fallback-engine" };
             }
         } catch (fallbackErr) {
-            console.error("[AI Resume Resilience Fallback Error]", fallbackErr);
+            console.error("[Auto-Resume Resilience Fallback Error]", fallbackErr);
         }
 
+        return { success: false, error };
+    }
+};
+
+export const generateResume = async (req, res) => {
+    try {
+        const targetUserId = req.params.id || req.id;
+
+        // Security guard: Users can only generate or modify their own resume
+        if (targetUserId.toString() !== req.id.toString()) {
+            return res.status(403).json({ 
+                message: "Unauthorized: You can only generate or modify your own resume.", 
+                success: false 
+            });
+        }
+
+        const result = await buildResumeForUserInternal(targetUserId);
+
+        if (!result || !result.success) {
+            return res.status(500).json({
+                success: false,
+                message: result?.error?.message || "Failed to generate AI resume"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Resume updated successfully using ${result.model || 'Gemini'}!`,
+            resume: result.resume,
+            user: result.user
+        });
+    } catch (error) {
+        console.error("[generateResume Error]", error);
         return res.status(500).json({
             success: false,
             message: error.message || "Failed to generate AI resume"

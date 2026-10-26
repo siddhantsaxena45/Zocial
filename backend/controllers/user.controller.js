@@ -12,6 +12,7 @@ import cloudinary from "../utils/cloudinary.js";
 import { getReciverId, io } from "../socket/socket.js";
 import crypto from "crypto";
 import mongoose from "mongoose";
+import { generateJsonWithGemini } from "../utils/geminiRotator.js";
 
 export const register = async (req, res) => {
     try {
@@ -787,38 +788,27 @@ export const getMe = async (req, res) => {
 };
 
 /**
+/**
  * 🔍 Recruiter Search Portal ("Zocial Scout")
- * Enables recruiters to search candidates by verified skills, proof-of-work transmissions,
- * role specialization, and gig availability.
+ * Enables recruiters to search candidates using true AI Semantic Search
+ * against candidate skills, bio, role, and visual proof-of-work transmissions.
  */
 export const scoutCandidates = async (req, res) => {
     try {
         const { skills, role, openOnly, query } = req.query;
 
-        const filter = {};
+        const isSearching = Boolean(
+            (skills && skills.trim()) || 
+            (role && role.trim()) || 
+            (query && query.trim())
+        );
 
+        const filter = {};
         if (String(openOnly) === "true") {
             filter.openToOpportunities = true;
         }
 
-        if (role && role.trim()) {
-            filter.targetRole = new RegExp(role.trim(), "i");
-        }
-
-        if (query && query.trim()) {
-            const regex = new RegExp(query.trim(), "i");
-            filter.$or = [
-                { username: regex },
-                { bio: regex },
-                { targetRole: regex },
-                { skills: regex }
-            ];
-        }
-
-        const parsedSkillKeywords = skills 
-            ? skills.split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
-            : [];
-
+        // Fetch candidates with their transmissions and resume data
         let candidates = await User.find(filter)
             .select("-password")
             .populate({
@@ -827,22 +817,135 @@ export const scoutCandidates = async (req, res) => {
                 select: "caption image githubUrl liveUrl tags isBounty bountyAmount createdAt"
             });
 
-        // Filter and score candidates based on skill match
+        // 1. Browsing State (No query entered): Do NOT assign arbitrary 85% match!
+        if (!isSearching) {
+            const formattedCandidates = candidates.map(candidate => ({
+                _id: candidate._id,
+                username: candidate.username,
+                profilepicture: candidate.profilepicture,
+                bio: candidate.bio,
+                targetRole: candidate.targetRole || "Software Builder",
+                hourlyRate: candidate.hourlyRate || "Flexible",
+                openToOpportunities: candidate.openToOpportunities,
+                githubProfile: candidate.githubProfile,
+                portfolioUrl: candidate.portfolioUrl,
+                skills: candidate.skills || [],
+                matchedSkills: [],
+                matchScore: null, // Null when not searching!
+                semanticReason: null,
+                proofOfWorkCount: candidate.posts?.length || 0,
+                transmissions: candidate.posts || []
+            }));
+
+            // Sort active builders first by verified proof-of-work count
+            formattedCandidates.sort((a, b) => b.proofOfWorkCount - a.proofOfWorkCount);
+
+            return res.status(200).json({
+                success: true,
+                isSearching: false,
+                total: formattedCandidates.length,
+                candidates: formattedCandidates
+            });
+        }
+
+        // 2. Search State: Perform Real AI Semantic Match
+        const semanticQuery = [
+            query ? `Search Query: "${query.trim()}"` : '',
+            role ? `Target Role/Specialization: "${role.trim()}"` : '',
+            skills ? `Required Tech Stack/Skills: "${skills.trim()}"` : ''
+        ].filter(Boolean).join(" | ");
+
+        // Build concise candidate profiles for semantic evaluation
+        const candidateProfiles = candidates.map((c) => ({
+            id: c._id.toString(),
+            username: c.username,
+            targetRole: c.targetRole || "Software Builder",
+            bio: c.bio || "",
+            skills: c.skills || [],
+            resumeSummary: c.resume_data?.ai_summary || c.ai_summary || "",
+            transmissions: (c.posts || []).slice(0, 3).map(p => ({
+                caption: (p.caption || "").substring(0, 100),
+                tags: p.tags || []
+            }))
+        }));
+
+        let semanticScoreMap = {};
+        try {
+            const prompt = `You are an elite Principal AI Technical Recruiter.
+Evaluate each candidate builder semantically against the following search requirements:
+REQUIREMENTS: ${semanticQuery}
+
+CANDIDATES:
+${JSON.stringify(candidateProfiles, null, 2)}
+
+Instructions:
+Perform true SEMANTIC matching. Consider:
+1. Technical scope, related frameworks/tools, and architectural capability demonstrated in bio, skills, and transmissions.
+2. Even if exact keywords differ (e.g. "React" aligns with "Next.js/Frontend", "FastAPI/Postgres" aligns with "Backend API"), assign appropriate semantic scores.
+3. If a candidate closely aligns, assign 80-98%. If partially aligns, assign 50-79%. If low/no alignment, assign 15-45%.
+
+Return strict valid JSON with an array named "results":
+{
+  "results": [
+    {
+      "id": "candidate_id",
+      "matchScore": number,
+      "semanticReason": "Short 1-sentence explanation of why they match or align",
+      "matchedSkills": ["skill1", "skill2"]
+    }
+  ]
+}`;
+
+            const { data } = await generateJsonWithGemini(
+                prompt,
+                "You are an ATS semantic talent matcher. Always return strict, valid JSON with a 'results' array."
+            );
+
+            if (data && Array.isArray(data.results)) {
+                data.results.forEach(item => {
+                    if (item.id) {
+                        semanticScoreMap[item.id] = {
+                            matchScore: Math.min(99, Math.max(10, Math.round(Number(item.matchScore) || 50))),
+                            semanticReason: item.semanticReason || "",
+                            matchedSkills: Array.isArray(item.matchedSkills) ? item.matchedSkills : []
+                        };
+                    }
+                });
+            }
+        } catch (geminiError) {
+            console.error("[Scout Semantic Gemini Fallback]", geminiError);
+        }
+
+        // Combine semantic results with candidate records (with fallback heuristics if needed)
         const scoredCandidates = candidates.map(candidate => {
-            const candidateSkills = (candidate.skills || []).map(s => s.toLowerCase());
-            
-            // Collect tags from candidate transmissions as demonstrated skills
-            const transmissionTags = (candidate.posts || []).flatMap(p => p.tags || []).map(t => t.toLowerCase());
-            const allCandidateTags = new Set([...candidateSkills, ...transmissionTags]);
+            const idStr = candidate._id.toString();
+            const semanticResult = semanticScoreMap[idStr];
 
+            let matchScore;
+            let semanticReason = "";
             let matchedSkills = [];
-            let matchScore = 75; // baseline interest score
 
-            if (parsedSkillKeywords.length > 0) {
-                matchedSkills = parsedSkillKeywords.filter(k => 
-                    [...allCandidateTags].some(tag => tag.includes(k) || k.includes(tag))
-                );
-                matchScore = Math.round((matchedSkills.length / parsedSkillKeywords.length) * 100);
+            if (semanticResult) {
+                matchScore = semanticResult.matchScore;
+                semanticReason = semanticResult.semanticReason;
+                matchedSkills = semanticResult.matchedSkills;
+            } else {
+                // Heuristic Fallback
+                const queryTokens = (semanticQuery.toLowerCase().match(/\b[a-z0-9+#.-]{2,}\b/g) || []);
+                const candidateText = [
+                    candidate.username,
+                    candidate.targetRole,
+                    candidate.bio,
+                    ...(candidate.skills || []),
+                    ...((candidate.posts || []).flatMap(p => p.tags || []))
+                ].join(" ").toLowerCase();
+
+                const hits = queryTokens.filter(t => candidateText.includes(t));
+                matchScore = queryTokens.length > 0 
+                    ? Math.min(95, Math.max(20, Math.round((hits.length / queryTokens.length) * 100))) 
+                    : 60;
+                matchedSkills = hits.slice(0, 4);
+                semanticReason = hits.length > 0 ? `Demonstrated capabilities in ${hits.slice(0, 3).join(", ")}` : "Verified network builder";
             }
 
             return {
@@ -857,22 +960,23 @@ export const scoutCandidates = async (req, res) => {
                 portfolioUrl: candidate.portfolioUrl,
                 skills: candidate.skills || [],
                 matchedSkills,
-                matchScore: parsedSkillKeywords.length > 0 ? matchScore : 85,
+                matchScore,
+                semanticReason,
                 proofOfWorkCount: candidate.posts?.length || 0,
                 transmissions: candidate.posts || []
             };
         });
 
-        // Sort candidates: highest match score first, then by verified proof-of-work count
-        scoredCandidates.sort((a, b) => {
-            if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-            return b.proofOfWorkCount - a.proofOfWorkCount;
-        });
+        // Filter and sort by highest match score
+        const relevantCandidates = scoredCandidates
+            .filter(c => c.matchScore >= 20)
+            .sort((a, b) => b.matchScore - a.matchScore);
 
         return res.status(200).json({
             success: true,
-            total: scoredCandidates.length,
-            candidates: scoredCandidates
+            isSearching: true,
+            total: relevantCandidates.length,
+            candidates: relevantCandidates
         });
     } catch (error) {
         console.error("[Zocial Scout Error]", error);

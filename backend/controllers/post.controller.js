@@ -6,6 +6,7 @@ import { Comment } from "../models/comment.model.js";
 import { Notification } from "../models/notification.model.js";
 import cloudinary from "../utils/cloudinary.js";
 import { getReciverId, io } from "../socket/socket.js";
+import { buildResumeForUserInternal } from "./resume.controller.js";
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -86,6 +87,11 @@ export const addPost = async (req, res) => {
             user.posts.push(post._id);
             await user.save();
         }
+
+        // 🔄 Automatically update the author's multimodal AI resume in the background
+        buildResumeForUserInternal(authorId).catch(err => {
+            console.error("[Auto-Resume error on addPost]:", err);
+        });
 
         // Notify tagged collaborator for peer vouching
         if (targetCollaborator && targetCollaborator._id.toString() !== authorId) {
@@ -354,6 +360,11 @@ export const deletePost = async (req, res) => {
 
         await Comment.deleteMany({ post: postId });
         await Notification.deleteMany({ post: postId });
+
+        // 🔄 Automatically update the author's multimodal AI resume in the background
+        buildResumeForUserInternal(authorId).catch(err => {
+            console.error("[Auto-Resume error on deletePost]:", err);
+        });
 
         return res.status(200).json({ message: "Post deleted successfully", success: true });
     } catch (error) {

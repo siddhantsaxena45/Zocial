@@ -137,71 +137,72 @@ const LeftSidebar = () => {
   return (
     <>
       {/* Desktop Sidebar (left vertical) */}
-      <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:left-0 bg-white/40 backdrop-blur-3xl border-r border-purple-100/40 px-6 py-8 z-20">
+      <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:left-0 bg-white/50 backdrop-blur-3xl border-r border-purple-100/40 px-4 py-5 z-20 overflow-y-auto overflow-x-hidden">
 
-        <div className="space-y-6">
-          <h1 onClick={() => navigate("/")} className='text-3xl font-black px-3 text-gradient mb-6 tracking-tighter cursor-pointer'>
+        <div className="shrink-0 mb-4 px-3">
+          <h1 onClick={() => navigate("/")} className='text-3xl font-black text-gradient tracking-tighter cursor-pointer'>
             Zocial
           </h1>
-          <div className="space-y-1.5">
-            {sidebar.map((item, index) => {
-              const synergyCount = item.text === "Synergy" ? unseenSynergyCount : 0;
-              const active = isItemActive(item.text);
-              const content = (
-                <div
-                  onClick={() => { if (item.text !== "Notifications") sidebarHandler(item.text) }}
-                  className={`flex items-center relative gap-3.5 cursor-pointer px-4 py-3 rounded-2xl transition-all duration-300 group w-full ${
+        </div>
+
+        <div className="space-y-1 pb-4">
+          {sidebar.map((item, index) => {
+            const synergyCount = item.text === "Synergy" ? unseenSynergyCount : 0;
+            const active = isItemActive(item.text);
+            const content = (
+              <div
+                onClick={() => { if (item.text !== "Notifications") sidebarHandler(item.text) }}
+                className={`flex items-center relative gap-3.5 cursor-pointer px-4 py-2.5 rounded-2xl transition-all duration-300 group w-full ${
+                  active
+                    ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-lg shadow-purple-500/25 font-black"
+                    : "text-slate-600 hover:text-purple-700 hover:bg-purple-50/70 font-bold"
+                }`}
+              >
+                <span className={`text-xl transition-transform group-hover:scale-110 ${active ? "text-white" : ""}`}>
+                  {item.icon}
+                </span>
+                <span className="text-sm tracking-tight">{item.text}</span>
+                
+                {item.badge && (
+                  <span className={`ml-auto text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                     active
-                      ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-lg shadow-purple-500/25 font-black"
-                      : "text-slate-600 hover:text-purple-700 hover:bg-purple-50/70 font-bold"
-                  }`}
-                >
-                  <span className={`text-xl transition-transform group-hover:scale-110 ${active ? "text-white" : ""}`}>
-                    {item.icon}
+                      ? "bg-white/20 text-white border-white/30"
+                      : "bg-purple-50 text-purple-700 border-purple-200"
+                  }`}>
+                    {item.badge}
                   </span>
-                  <span className="text-sm tracking-tight">{item.text}</span>
-                  
-                  {item.badge && (
-                    <span className={`ml-auto text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                      active
-                        ? "bg-white/20 text-white border-white/30"
-                        : "bg-purple-50 text-purple-700 border-purple-200"
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
+                )}
 
-                  {item.text === "Notifications" && unseenNotificationsCount > 0 && (
-                    <span className="absolute left-7 top-2 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-lg z-10">
-                      {unseenNotificationsCount}
-                    </span>
-                  )}
+                {item.text === "Notifications" && unseenNotificationsCount > 0 && (
+                  <span className="absolute left-7 top-2 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-lg z-10">
+                    {unseenNotificationsCount}
+                  </span>
+                )}
 
-                  {synergyCount > 0 && (
-                    <span className="absolute left-7 top-2 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-lg z-10">
-                      {synergyCount}
-                    </span>
-                  )}
+                {synergyCount > 0 && (
+                  <span className="absolute left-7 top-2 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-lg z-10">
+                    {synergyCount}
+                  </span>
+                )}
 
-                  {item.text === "Messages" && unseenMessagesCount > 0 && (
-                    <span className="absolute left-7 top-2 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-lg">
-                      {unseenMessagesCount}
-                    </span>
-                  )}
-                </div>
+                {item.text === "Messages" && unseenMessagesCount > 0 && (
+                  <span className="absolute left-7 top-2 bg-purple-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-lg">
+                    {unseenMessagesCount}
+                  </span>
+                )}
+              </div>
+            );
+
+            if (item.text === "Notifications") {
+              return (
+                <NotificationPopover key={index} likeNotification={bellNotifications}>
+                  {content}
+                </NotificationPopover>
               );
+            }
 
-              if (item.text === "Notifications") {
-                return (
-                  <NotificationPopover key={index} likeNotification={bellNotifications}>
-                    {content}
-                  </NotificationPopover>
-                );
-              }
-
-              return <div key={index}>{content}</div>;
-            })}
-          </div>
+            return <div key={index}>{content}</div>;
+          })}
         </div>
       </div>
 

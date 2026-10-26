@@ -34,13 +34,22 @@ const ResumeGenerator = () => {
         }
     }, [userProfile]);
 
-    const isOwner = authUser?._id === params.id || !params.id || authUser?._id === userProfile?._id;
+    const isOwner = Boolean(
+        (authUser?._id && params.id && String(authUser._id) === String(params.id)) ||
+        (!params.id && authUser?._id) ||
+        (authUser?._id && userProfile?._id && String(authUser._id) === String(userProfile._id))
+    );
 
-    // Handle Generation / Regeneration using Gemini AI
+    // Handle Generation / Regeneration using Gemini AI (Owner Only)
     const handleGenerateResume = async () => {
+        if (!isOwner) {
+            toast.error("You can only generate or modify your own resume.");
+            return;
+        }
+
         setIsGenerating(true);
         try {
-            const targetId = params.id || authUser?._id;
+            const targetId = authUser?._id;
             const res = await axios.post(
                 `${import.meta.env.VITE_API_URL}/resume/generate/${targetId}`,
                 {},
@@ -108,24 +117,26 @@ const ResumeGenerator = () => {
                         <span>AI Job-Fit Scanner</span>
                     </Button>
 
-                    {/* Gemini AI Action Button */}
-                    <Button 
-                        onClick={handleGenerateResume} 
-                        disabled={isGenerating}
-                        className="gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-md transition-all text-xs font-bold"
-                    >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Generating with Gemini...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="h-4 w-4 text-amber-300" />
-                                <span>{resumeData ? "Regenerate with Gemini AI" : "Generate AI Resume"}</span>
-                            </>
-                        )}
-                    </Button>
+                    {/* Gemini AI Action Button - ONLY VISIBLE TO RESUME OWNER */}
+                    {isOwner && (
+                        <Button 
+                            onClick={handleGenerateResume} 
+                            disabled={isGenerating}
+                            className="gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-md transition-all text-xs font-bold"
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Generating with Gemini...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="h-4 w-4 text-amber-300" />
+                                    <span>{resumeData ? "Regenerate with Gemini AI" : "Generate AI Resume"}</span>
+                                </>
+                            )}
+                        </Button>
+                    )}
 
                     {/* PDF Export Button */}
                     <Button 
@@ -136,6 +147,33 @@ const ResumeGenerator = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Informative Status Banner if no resume yet */}
+            {!resumeData && (
+                <div className="max-w-4xl mx-auto mb-4 px-4 print:hidden">
+                    {isOwner ? (
+                        <div className="p-4 rounded-2xl bg-indigo-50/90 border border-indigo-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-indigo-900 text-xs font-medium shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <Sparkles className="h-5 w-5 text-indigo-600 shrink-0" />
+                                <span>Generate your official AI-verified ATS resume using Gemini 2.5 Flash analysis of your transmissions and visual proof-of-work.</span>
+                            </div>
+                            <Button 
+                                onClick={handleGenerateResume} 
+                                disabled={isGenerating}
+                                size="sm"
+                                className="btn-purple text-xs shrink-0 rounded-xl"
+                            >
+                                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate Now"}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="p-4 rounded-2xl bg-purple-50/90 border border-purple-200/80 flex items-center gap-3 text-purple-900 text-xs font-medium shadow-sm">
+                            <ShieldCheck className="h-5 w-5 text-purple-600 shrink-0" />
+                            <span>Viewing public portfolio profile for <strong>@{userProfile.username}</strong>. Only the account owner can build or update their AI resume.</span>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* A4 Paper Canvas */}
             <div className="max-w-4xl mx-auto bg-white shadow-2xl print:shadow-none min-h-[1056px] p-8 sm:p-16 relative overflow-hidden rounded-2xl print:rounded-none">

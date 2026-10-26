@@ -95,23 +95,11 @@ const ChatPage = () => {
 
 
   return (
-    <div className="flex h-[calc(100dvh-13rem)] lg:h-[calc(100dvh-3rem)] w-full overflow-hidden relative glass-card backdrop-blur-3xl bg-white/85 border border-purple-100/70 shadow-xl shadow-purple-900/5 rounded-2xl">
+    <div className="flex h-[calc(100dvh-13.5rem)] lg:h-[calc(100dvh-4rem)] w-full overflow-hidden relative glass-card backdrop-blur-3xl bg-white/85 border border-purple-100/70 shadow-xl shadow-purple-900/5 rounded-2xl">
 
-      {/* 📱 Mobile Full-Screen Chat */}
-      {selectedUser && (
-        <div className="md:hidden fixed inset-0 h-[100dvh] z-[100] bg-white">
-          <ChatUser 
-            user={selectedUser} 
-            isOnline={onlineUsers.includes(selectedUser._id.toString())} 
-            onBack={() => dispatch(setSelectedUser(null))} 
-          />
-        </div>
-      )}
-
-      {/* 👈 Left Sidebar (Always visible) */}
-      <div className="w-full md:w-80 flex-shrink-0 border-r border-purple-100/60 bg-white/50 backdrop-blur-3xl shadow-sm flex flex-col">
+      {/* 👈 Left Sidebar (Contacts List) */}
+      <div className={`${selectedUser ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-shrink-0 border-r border-purple-100/60 bg-white/50 backdrop-blur-3xl shadow-sm flex-col h-full`}>
         <h1 className="text-lg font-black px-6 py-6 border-b border-purple-100/50 text-slate-900 uppercase text-[10px] tracking-[0.2em] opacity-60">Intelligence Hub</h1>
-
 
         <div className="overflow-y-auto flex-1 h-full font-mono bg-slate-50/20">
           {sortedUsers.length === 0 ? (
@@ -128,7 +116,6 @@ const ChatPage = () => {
             sortedUsers.map((u) => {
               const isOnline = onlineUsers.includes(u._id.toString());
               return (
-
                 <div
                   key={u._id}
                   onClick={() => {
@@ -142,11 +129,9 @@ const ChatPage = () => {
                     });
 
                     dispatch({ type: "messageNotification/setAllMessages", payload: updatedMessages });
-                  }
-                  }
+                  }}
                   className={`flex items-center gap-4 px-4 py-3 mx-3 my-1.5 cursor-pointer transition-all rounded-2xl hover:bg-indigo-50/80 ${selectedUser?._id === u._id ? 'bg-indigo-100/80 shadow-sm ring-1 ring-indigo-200' : ''
                     }`}
-
                 >
                   <div className="relative">
                     <Avatar className="h-10 w-10 shadow-sm">
@@ -155,10 +140,10 @@ const ChatPage = () => {
                     </Avatar>
                     {isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>}
                   </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-slate-900 truncate">{u.username}</span>
-                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">Verified Link</span>
-                    </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-bold text-slate-900 truncate">{u.username}</span>
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">Verified Link</span>
+                  </div>
                   <div className="ml-auto flex flex-col items-end gap-1">
                     {unseenCounts[u._id] > 0 && (
                       <span className="text-[8px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded-md shadow-sm">
@@ -166,18 +151,15 @@ const ChatPage = () => {
                       </span>
                     )}
                   </div>
-
                 </div>
-              )
-            }
-            )
+              );
+            })
           )}
         </div>
       </div>
 
-      {/* 💬 Right Chat Panel (Desktop only) */}
-      <div className="hidden md:flex flex-1 bg-slate-50/50">
-
+      {/* 💬 Right Chat Panel (Desktop + Mobile) */}
+      <div className={`${selectedUser ? 'flex' : 'hidden md:flex'} flex-1 bg-slate-50/50 flex-col h-full overflow-hidden`}>
         {selectedUser ? (
           <ChatUser 
             user={selectedUser} 

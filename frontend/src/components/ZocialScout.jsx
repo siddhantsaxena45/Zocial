@@ -16,6 +16,7 @@ import JobFitModal from "./JobFitModal";
 const ZocialScout = () => {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [semanticQuery, setSemanticQuery] = useState("");
   const [skillsQuery, setSkillsQuery] = useState("");
   const [roleQuery, setRoleQuery] = useState("");
   const [openOnly, setOpenOnly] = useState(false);
@@ -28,6 +29,7 @@ const ZocialScout = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      if (semanticQuery.trim()) params.append("query", semanticQuery.trim());
       if (skillsQuery.trim()) params.append("skills", skillsQuery.trim());
       if (roleQuery.trim()) params.append("role", roleQuery.trim());
       if (openOnly) params.append("openOnly", "true");
@@ -57,6 +59,16 @@ const ZocialScout = () => {
     }
   };
 
+  const clearFilters = () => {
+    setSemanticQuery("");
+    setSkillsQuery("");
+    setRoleQuery("");
+    setOpenOnly(false);
+    setTimeout(() => {
+      searchCandidates();
+    }, 50);
+  };
+
   const startChatWithCandidate = (candidate) => {
     localStorage.setItem("zocial_chat_target", JSON.stringify(candidate));
     dispatch(setSelectedUser(candidate));
@@ -68,6 +80,8 @@ const ZocialScout = () => {
     toast.success(`Opening chat with @${candidate.username}`);
   };
 
+  const isFilterActive = Boolean(semanticQuery.trim() || skillsQuery.trim() || roleQuery.trim());
+
   return (
     <div className="w-full py-4 md:py-8 bg-transparent">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -78,29 +92,47 @@ const ZocialScout = () => {
 
           <div className="relative z-10 max-w-2xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-black uppercase tracking-wider">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-400" /> Zocial Scout • 100% Free & Open Talent Engine
+              <Sparkles className="h-3.5 w-3.5 text-emerald-400" /> Zocial Scout • AI Semantic Talent Engine
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
               Source Verified Builders with Proof-of-Work
             </h1>
             <p className="text-slate-300 text-sm md:text-base leading-relaxed font-medium">
-              Skip traditional keyword-stuffed resumes. Search candidates with real visual proof-of-work transmissions, verified Git repos, and peer-endorsed synergy.
+              Powered by AI semantic evaluation. Search candidates using natural language, technical scope, or verified Git transmissions and visual architecture artifacts.
             </p>
           </div>
         </div>
 
         {/* Filter & Sourcing Control Center */}
         <div className="glass-card p-6 rounded-3xl border border-white/60 shadow-xl space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Main AI Semantic Search Bar */}
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> AI Semantic Search (Natural Language or Technical Scope)
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-purple-500" />
+              <input
+                type="text"
+                placeholder="e.g. Senior engineer who built cloud microservices with React & Kafka, or Creative UI/UX designer with modern Tailwind proofs..."
+                value={semanticQuery}
+                onChange={(e) => setSemanticQuery(e.target.value)}
+                onKeyDown={handleKeyPress}
+                className="w-full bg-white border border-purple-200/80 rounded-2xl pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-purple-500 shadow-sm transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">
-                Technologies / Stack (Comma-separated)
+                Technologies / Stack
               </label>
               <div className="relative">
                 <Code className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="e.g. React, Node.js, Docker, Python..."
+                  placeholder="e.g. React, Node.js, Python..."
                   value={skillsQuery}
                   onChange={(e) => setSkillsQuery(e.target.value)}
                   onKeyDown={handleKeyPress}
@@ -117,7 +149,7 @@ const ZocialScout = () => {
                 <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="e.g. Full-Stack Engineer, Frontend Lead..."
+                  placeholder="e.g. Full-Stack Lead, Backend Architect..."
                   value={roleQuery}
                   onChange={(e) => setRoleQuery(e.target.value)}
                   onKeyDown={handleKeyPress}
@@ -126,13 +158,23 @@ const ZocialScout = () => {
               </div>
             </div>
 
-            <div className="flex items-end gap-3">
+            <div className="flex items-end gap-2">
               <Button
                 onClick={searchCandidates}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider py-5 rounded-xl shadow-lg shadow-indigo-100 gap-2"
+                className="flex-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider py-5 rounded-xl shadow-lg shadow-purple-500/20 gap-2 active:scale-95 transition-all"
               >
-                <Search className="h-4 w-4" /> Scout Candidates
+                <Sparkles className="h-4 w-4 text-amber-300" /> Scout Semantic
               </Button>
+              {isFilterActive && (
+                <Button
+                  onClick={clearFilters}
+                  variant="outline"
+                  className="border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold py-5 rounded-xl px-3"
+                  title="Clear all filters"
+                >
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
 
@@ -154,7 +196,7 @@ const ZocialScout = () => {
             </div>
 
             <div className="text-xs font-bold text-slate-500">
-              Found <span className="text-indigo-600 font-black">{candidates.length}</span> Verified Builders
+              Found <span className="text-indigo-600 font-black">{candidates.length}</span> {isFilterActive ? "Matching Candidates" : "Verified Builders"}
             </div>
           </div>
         </div>
@@ -163,14 +205,14 @@ const ZocialScout = () => {
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400 space-y-3">
             <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs font-bold uppercase tracking-widest">Scanning builder network...</p>
+            <p className="text-xs font-bold uppercase tracking-widest">Running AI Semantic Talent Match...</p>
           </div>
         ) : candidates.length === 0 ? (
           <div className="py-20 text-center glass-card p-12 rounded-3xl border border-dashed border-slate-300 space-y-4">
             <Users className="h-12 w-12 text-slate-300 mx-auto" />
             <h3 className="text-base font-black text-slate-700">No Candidates Matching Criteria</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Try broadening your tech stack keywords or clearing role filters.
+              Try broadening your semantic search description or clearing filters.
             </p>
           </div>
         ) : (
@@ -214,17 +256,32 @@ const ZocialScout = () => {
                       </div>
                     </div>
 
-                    {/* Match Score Badge */}
+                    {/* Match Score Badge (ONLY when searching) or Verified Builder (when browsing) */}
                     <div className="flex flex-col items-end">
-                      <div className="px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 font-black text-xs flex items-center gap-1 shadow-sm">
-                        <Sparkles className="h-3 w-3 text-indigo-600" />
-                        <span>{candidate.matchScore}% Match</span>
-                      </div>
+                      {candidate.matchScore !== null && candidate.matchScore !== undefined ? (
+                        <div className="px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 font-black text-xs flex items-center gap-1 shadow-sm">
+                          <Sparkles className="h-3 w-3 text-indigo-600" />
+                          <span>{candidate.matchScore}% Match</span>
+                        </div>
+                      ) : (
+                        <div className="px-2.5 py-1 bg-purple-50/90 border border-purple-200/80 rounded-xl text-purple-700 font-bold text-[10px] flex items-center gap-1 shadow-sm">
+                          <ShieldCheck className="h-3.5 w-3.5 text-purple-600" />
+                          <span>Verified Builder</span>
+                        </div>
+                      )}
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
                         {candidate.proofOfWorkCount} Transmissions
                       </span>
                     </div>
                   </div>
+
+                  {/* Semantic Match Reason if generated */}
+                  {candidate.semanticReason && (
+                    <div className="flex items-center gap-2 text-[11px] font-semibold text-purple-800 bg-purple-50/80 px-3 py-1.5 rounded-xl border border-purple-100 shadow-xs">
+                      <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                      <span className="line-clamp-1">{candidate.semanticReason}</span>
+                    </div>
+                  )}
 
                   <p className="text-xs text-slate-600 font-medium line-clamp-2 italic leading-relaxed">
                     "{candidate.bio || "Dedicated builder creating production-ready digital solutions."}"
@@ -237,7 +294,7 @@ const ZocialScout = () => {
                         <span
                           key={idx}
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                            candidate.matchedSkills?.includes(skill.toLowerCase())
+                            candidate.matchedSkills?.some(m => m.toLowerCase() === skill.toLowerCase())
                               ? "bg-indigo-600 text-white border-indigo-600"
                               : "bg-slate-100 text-slate-700 border-slate-200"
                           }`}
@@ -312,7 +369,7 @@ const ZocialScout = () => {
                         variant="outline"
                         className="text-[10px] font-black uppercase tracking-wider h-8 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 gap-1"
                       >
-                        <FileText className="h-3 w-3" /> AI Resume
+                        <FileText className="h-3 w-3" /> View Resume
                       </Button>
                     </Link>
                   </div>
