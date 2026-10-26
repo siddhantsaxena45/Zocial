@@ -194,14 +194,14 @@ const LeftSidebar = () => {
         </div>
       </div>
 
-      {/* Mobile Top Navigation & Quick Feature Pills */}
+      {/* Mobile Top Navigation */}
       <div className='lg:hidden fixed top-0 left-0 right-0 z-50 glass backdrop-blur-xl border-b border-purple-100/50 shadow-sm print:hidden'>
         {/* Top Header Row */}
         <div className="flex justify-between items-center px-4 py-2.5">
           <h1 onClick={() => navigate("/")} className='text-2xl font-black text-gradient tracking-tighter cursor-pointer'>
             Zocial
           </h1>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <button 
               onClick={() => setSearchOpen(true)} 
               className="p-2 text-slate-600 hover:text-purple-600 rounded-xl hover:bg-purple-50 transition-colors"
@@ -209,8 +209,20 @@ const LeftSidebar = () => {
             >
               <Search className="h-5 w-5" />
             </button>
+            <button 
+              onClick={() => { dispatch(markSynergyNotificationsSeen()); setSynergyOpen(true); }} 
+              className="relative p-2 text-slate-600 hover:text-purple-600 rounded-xl hover:bg-purple-50 transition-colors"
+              title="Synergy Network Requests"
+            >
+              <Users className="h-5 w-5" />
+              {unseenSynergyCount > 0 && (
+                <span className="absolute top-1 right-1 bg-amber-500 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-sm">
+                  {unseenSynergyCount}
+                </span>
+              )}
+            </button>
             <NotificationPopover likeNotification={bellNotifications}>
-              <button className="relative p-2 text-slate-600 hover:text-purple-600 rounded-xl hover:bg-purple-50 transition-colors">
+              <button className="relative p-2 text-slate-600 hover:text-purple-600 rounded-xl hover:bg-purple-50 transition-colors" title="Notifications">
                 <Bell className="h-5 w-5" />
                 {unseenNotificationsCount > 0 && (
                   <span className="absolute top-1 right-1 bg-purple-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-sm">
@@ -228,35 +240,6 @@ const LeftSidebar = () => {
             </button>
           </div>
         </div>
-
-        {/* Feature Pills Horizontal Scrollbar */}
-        <div className="flex items-center gap-2 px-3 py-1.5 overflow-x-auto no-scrollbar border-t border-purple-100/40 bg-white/40">
-          <button 
-            onClick={() => navigate("/scout")} 
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all shadow-sm ${
-              location.pathname === "/scout" 
-                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-purple-500/25" 
-                : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200/60"
-            }`}
-          >
-            <Compass className="h-3.5 w-3.5" /> Scout Engine
-          </button>
-          <button 
-            onClick={() => { dispatch(markSynergyNotificationsSeen()); setSynergyOpen(true); }} 
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all shadow-sm ${
-              unseenSynergyCount > 0 
-                ? "bg-amber-100 text-amber-900 border border-amber-300" 
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-            }`}
-          >
-            <Users className="h-3.5 w-3.5" /> Synergy
-            {unseenSynergyCount > 0 && (
-              <span className="bg-amber-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">
-                {unseenSynergyCount}
-              </span>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
@@ -272,6 +255,26 @@ const LeftSidebar = () => {
           <span className="text-[9px] font-bold mt-0.5">Home</span>
         </button>
 
+        {/* Scout */}
+        <button
+          onClick={() => navigate("/scout")}
+          className={`flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all ${
+            location.pathname === "/scout" ? "text-purple-600 font-black" : "text-slate-500 hover:text-purple-600"
+          }`}
+        >
+          <Compass className="h-5 w-5" />
+          <span className="text-[9px] font-bold mt-0.5">Scout</span>
+        </button>
+
+        {/* Center Prominent Create Button */}
+        <button
+          onClick={() => setOpen(true)}
+          className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 active:scale-95 transition-all -translate-y-2 border-2 border-white"
+          title="Create Transmission"
+        >
+          <PlusSquare className="h-6 w-6" />
+        </button>
+
         {/* Messages */}
         <button
           onClick={() => navigate("/chat")}
@@ -284,29 +287,6 @@ const LeftSidebar = () => {
           {unseenMessagesCount > 0 && (
             <span className="absolute top-1 right-2 bg-purple-600 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full">
               {unseenMessagesCount}
-            </span>
-          )}
-        </button>
-
-        {/* Center Prominent Create Button */}
-        <button
-          onClick={() => setOpen(true)}
-          className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 active:scale-95 transition-all -translate-y-2 border-2 border-white"
-          title="Create Transmission"
-        >
-          <PlusSquare className="h-6 w-6" />
-        </button>
-
-        {/* Synergy Network */}
-        <button
-          onClick={() => { dispatch(markSynergyNotificationsSeen()); setSynergyOpen(true); }}
-          className="relative flex flex-col items-center justify-center w-12 h-12 rounded-xl text-slate-500 hover:text-purple-600 transition-all"
-        >
-          <Users className="h-5 w-5" />
-          <span className="text-[9px] font-bold mt-0.5">Synergy</span>
-          {unseenSynergyCount > 0 && (
-            <span className="absolute top-1 right-2 bg-amber-500 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full">
-              {unseenSynergyCount}
             </span>
           )}
         </button>
