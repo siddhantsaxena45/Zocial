@@ -10,20 +10,44 @@ const postSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
-    comments: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Comment",
-        
-    }],
     image: {
         type: String,
         required: true,
     },
-    likes:[{
+    comments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Comment",
+    }],
+    likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-    }]
-
+    }],
+    // 🛠️ Proof-of-Work & Professional Artifacts
+    githubUrl: {
+        type: String,
+        default: "",
+    },
+    liveUrl: {
+        type: String,
+        default: "",
+    },
+    tags: [{
+        type: String,
+    }],
+    // 🤝 Synergy Collaborator (Proof of Teamwork)
+    collaboratorUsername: {
+        type: String,
+        default: "",
+    },
+    // 💼 Bounties / Freelance Deliverables
+    isBounty: {
+        type: Boolean,
+        default: false,
+    },
+    bountyAmount: {
+        type: String,
+        default: "",
+    }
 }, {
     timestamps: true,
 });

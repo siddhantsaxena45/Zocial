@@ -11,13 +11,19 @@ import getDataUri from "../utils/datauri.js";
 import cloudinary from "../utils/cloudinary.js";
 import { getReciverId, io } from "../socket/socket.js";
 import crypto from "crypto";
+import mongoose from "mongoose";
 
 export const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
         if (!username || !email || !password) {
-            return res.status(400).json({ message: "All fields are required", success: false })
-
+            return res.status(400).json({ message: "All fields are required", success: false });
+        }
+        if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ message: "Invalid payload format", success: false });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters", success: false });
         }
         let user = await User.findOne({ email });
         if (user) {
@@ -46,7 +52,10 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
-            return res.status(400).json({ message: "All fields are required", success: false })
+            return res.status(400).json({ message: "All fields are required", success: false });
+        }
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ message: "Invalid payload format", success: false });
         }
         let user = await User.findOne({ email });
         if (!user) {
@@ -86,7 +95,8 @@ export const login = async (req, res) => {
 
     }
     catch (error) {
-        console.log(error);
+        console.error("[Login Error]", error);
+        return res.status(500).json({ message: "Internal server error during login", success: false });
     }
 
 }
@@ -101,13 +111,17 @@ export const logout = async (req, res) => {
         }).json({ message: "User logged out successfully", success: true });
     }
     catch (error) {
-        console.log(error);
+        console.error("[Logout Error]", error);
+        return res.status(500).json({ message: "Internal server error during logout", success: false });
     }
 }
 
 export const getProfile = async (req, res) => {
     try {
         const userId = req.params.id;
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid user ID", success: false });
+        }
         let user = await User.findById(userId)
             .populate({ 
                 path: "posts", 
@@ -130,14 +144,23 @@ export const getProfile = async (req, res) => {
         return res.status(200).json({ user: userObj, success: true });
     }
     catch (error) {
-        console.log(error);
+        console.error("[Get Profile Error]", error);
+        return res.status(500).json({ message: "Internal server error fetching profile", success: false });
     }
 }
 
 export const editProfile = async (req, res) => {
     try {
         const userId = req.id;
-        const { bio, gender } = req.body;
+        const { 
+            bio, 
+            gender, 
+            openToOpportunities, 
+            targetRole, 
+            hourlyRate, 
+            githubProfile, 
+            portfolioUrl 
+        } = req.body;
         const profilePicture = req.file;
 
         let cloudResponse;
@@ -151,14 +174,24 @@ export const editProfile = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User not found", success: false });
         }
-        if (bio) user.bio = bio;
-        if (gender) user.gender = gender;
-        if (profilePicture) user.profilepicture = cloudResponse.secure_url;
+        if (bio !== undefined) user.bio = String(bio).substring(0, 1000);
+        if (gender !== undefined) user.gender = String(gender).substring(0, 50);
+        if (targetRole !== undefined) user.targetRole = String(targetRole).substring(0, 100);
+        if (hourlyRate !== undefined) user.hourlyRate = String(hourlyRate).substring(0, 50);
+        if (githubProfile !== undefined) user.githubProfile = String(githubProfile).trim().substring(0, 200);
+        if (portfolioUrl !== undefined) user.portfolioUrl = String(portfolioUrl).trim().substring(0, 200);
+        if (openToOpportunities !== undefined) {
+            user.openToOpportunities = String(openToOpportunities) === 'true' || openToOpportunities === true;
+        }
+        if (profilePicture && cloudResponse) {
+            user.profilepicture = cloudResponse.secure_url;
+        }
         await user.save();
         return res.status(200).json({ message: "Profile updated successfully", success: true, user });
     }
     catch (error) {
-        console.log(error);
+        console.error("[Edit Profile Error]", error);
+        return res.status(500).json({ message: "Internal server error updating profile", success: false });
     }
 }
 
@@ -275,7 +308,10 @@ export const followOrUnfollow = async (req, res) => {
         const followkarnewala = req.id;
         const jiskofollowkarrhe = req.params.id;
 
-        if (followkarnewala == jiskofollowkarrhe) {
+        if (!mongoose.Types.ObjectId.isValid(jiskofollowkarrhe)) {
+            return res.status(400).json({ message: "Invalid user ID", success: false });
+        }
+        if (followkarnewala === jiskofollowkarrhe) {
             return res.status(400).json({ message: "You cannot follow yourself", success: false });
         }
         let user = await User.findById(followkarnewala);
@@ -348,7 +384,8 @@ export const followOrUnfollow = async (req, res) => {
 
     }
     catch (error) {
-        console.log(error);
+        console.error("[Follow/Unfollow Error]", error);
+        return res.status(500).json({ message: "Internal server error during connection change", success: false });
     }
 }
 

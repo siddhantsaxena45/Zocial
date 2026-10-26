@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Bookmark, MessageCircle, MoreHorizontal, Send, Zap, Users, TrendingUp } from 'lucide-react'
+import { Bookmark, MessageCircle, MoreHorizontal, Send, Zap, Users, TrendingUp, Github, ExternalLink, Sparkles, DollarSign, Handshake } from 'lucide-react'
 
 import { FaBookmark, FaHeart, FaRegHeart } from "react-icons/fa";
 
@@ -182,22 +182,6 @@ const handleShare = async (imageUrl) => {
         }
     };
 
-    const getSentiment = (text) => {
-        if(!text) return { label: "Neutral", score: 50, color: "slate" };
-        const positiveWords = ['great', 'awesome', 'good', 'happy', 'excited', 'love', 'success', 'win', 'improve', 'best', 'proud', 'accomplished', 'achieved', 'new'];
-        const negativeWords = ['bad', 'sad', 'fail', 'worst', 'hate', 'terrible', 'error', 'bug', 'issue', 'hard', 'difficult', 'struggle'];
-        let score = 50;
-        const lowerText = text.toLowerCase();
-        positiveWords.forEach(w => { if(lowerText.includes(w)) score += 15; });
-        negativeWords.forEach(w => { if(lowerText.includes(w)) score -= 15; });
-        score = Math.min(99, Math.max(1, score)); // Keep it realistic between 1-99
-        if(score >= 65) return { label: "Positive", score, color: "emerald" };
-        if(score <= 35) return { label: "Needs Focus", score, color: "amber" };
-        return { label: "Neutral", score, color: "slate" };
-    };
-
-    const sentiment = getSentiment(post.caption);
-
     return (
         <div className="glass-card w-full overflow-hidden max-w-2xl mx-auto mb-10 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] group/post">
             {/* Post header */}
@@ -216,12 +200,7 @@ const handleShare = async (imageUrl) => {
                             <Link to={`/profile/${post.author?._id}`} className="text-base font-black text-slate-900 tracking-tight hover:text-indigo-600 transition-colors">
                                 {post.author?.username}
                             </Link>
-                            <Badge variant="secondary" className={`bg-${sentiment.color}-50/80 text-${sentiment.color}-700 border-${sentiment.color}-100 text-[9px] font-bold px-1.5 py-0 rounded-md uppercase tracking-wider`}>
-                                Sentiment: {sentiment.label} ({sentiment.score}%)
-                            </Badge>
                         </div>
-
-                       
                     </div>
                 </div>
 
@@ -388,6 +367,65 @@ const handleShare = async (imageUrl) => {
                             </>
                         )}
                     </div>
+
+                    {/* 🛠️ Proof-of-Work & Synergy Artifacts */}
+                    {(post.tags?.length > 0 || post.githubUrl || post.liveUrl || post.collaboratorUsername || post.isBounty) && (
+                        <div className="pt-2 pb-1 space-y-2 border-t border-slate-100/80">
+                            {/* Tech Stack Tags */}
+                            {post.tags && post.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {post.tags.map((tag, idx) => (
+                                        <span key={idx} className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100/60 px-2 py-0.5 rounded-md">
+                                            #{tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Artifact Links & Synergy */}
+                            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                                {post.githubUrl && (
+                                    <a
+                                        href={post.githubUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 px-2.5 py-1 rounded-lg transition-all"
+                                    >
+                                        <Github className="h-3 w-3" />
+                                        <span>Code Artifact</span>
+                                        <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                                    </a>
+                                )}
+
+                                {post.liveUrl && (
+                                    <a
+                                        href={post.liveUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition-all"
+                                    >
+                                        <Sparkles className="h-3 w-3 text-indigo-500" />
+                                        <span>Live Demo</span>
+                                        <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                                    </a>
+                                )}
+
+                                {post.collaboratorUsername && (
+                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-lg">
+                                        <Handshake className="h-3.5 w-3.5 text-purple-600" />
+                                        <span>Synergy with @{post.collaboratorUsername}</span>
+                                    </span>
+                                )}
+
+                                {post.isBounty && (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                                        <DollarSign className="h-3 w-3 text-emerald-600" />
+                                        <span>Bounty Deliverable {post.bountyAmount ? `(${post.bountyAmount})` : ''}</span>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {post.comments.length > 0 && (
                         <button 

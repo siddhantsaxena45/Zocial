@@ -5,7 +5,7 @@ import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { setAuthUser, updateUserProfile } from '@/redux/authSlice';
-import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark, Briefcase, DollarSign, Github, Globe } from "lucide-react";
 import { toast } from 'sonner';
 import axios from "axios";
 import NetworkListDialog from './NetworkListDialog';
@@ -266,7 +266,18 @@ const Profile = () => {
                         <div className="flex flex-col gap-6 flex-1 text-center md:text-left">
                             <div className="space-y-2">
                                 <div className="flex flex-col md:flex-row items-center gap-4">
-                                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">{userProfile?.username}</h1>
+                                    <div className="flex items-center gap-3">
+                                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">{userProfile?.username}</h1>
+                                        {userProfile?.openToOpportunities && (
+                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 font-bold text-[10px] tracking-wider uppercase shadow-sm">
+                                                <span className="relative flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                </span>
+                                                Open to Gigs
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="flex gap-2">
                                         {!isloggedIn ? (
                                             <div className="flex items-center gap-2">
@@ -322,6 +333,45 @@ const Profile = () => {
                                 <p className="text-slate-500 font-bold italic tracking-wide">
                                     {userProfile.bio || "Digital Innovation Strategist • Data Analysis Specialist"}
                                 </p>
+
+                                {(userProfile?.targetRole || userProfile?.hourlyRate || userProfile?.githubProfile || userProfile?.portfolioUrl) && (
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
+                                        {userProfile?.targetRole && (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold">
+                                                <Briefcase className="h-3.5 w-3.5 text-indigo-500" />
+                                                {userProfile.targetRole}
+                                            </span>
+                                        )}
+                                        {userProfile?.hourlyRate && (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold">
+                                                <DollarSign className="h-3.5 w-3.5 text-slate-500" />
+                                                {userProfile.hourlyRate}
+                                            </span>
+                                        )}
+                                        {userProfile?.githubProfile && (
+                                            <a
+                                                href={userProfile.githubProfile.startsWith('http') ? userProfile.githubProfile : `https://${userProfile.githubProfile}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold transition-all shadow-sm"
+                                            >
+                                                <Github className="h-3.5 w-3.5" />
+                                                GitHub
+                                            </a>
+                                        )}
+                                        {userProfile?.portfolioUrl && (
+                                            <a
+                                                href={userProfile.portfolioUrl.startsWith('http') ? userProfile.portfolioUrl : `https://${userProfile.portfolioUrl}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-semibold transition-all shadow-sm"
+                                            >
+                                                <Globe className="h-3.5 w-3.5" />
+                                                Portfolio
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-wrap justify-center md:justify-start gap-8">

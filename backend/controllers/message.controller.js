@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
 import { User } from "../models/user.model.js";
@@ -8,6 +9,16 @@ export const sendMessage = async (req, res) => {
     const senderId = req.id;
     const receiverId = req.params.id;
     const { message } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(receiverId)) {
+      return res.status(400).json({ message: "Invalid recipient ID", success: false });
+    }
+
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return res.status(400).json({ message: "Message content cannot be empty", success: false });
+    }
+
+    const sanitizedMessage = message.trim().substring(0, 2000);
 
     // 🔒 Security: Check for mutual follow before allowing message transmission
     const [sender, receiver] = await Promise.all([
@@ -38,7 +49,7 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    let newMessage = await Message.create({ senderId, receiverId, message });
+    let newMessage = await Message.create({ senderId, receiverId, message: sanitizedMessage });
 
     if (newMessage) {
       conversation.messages.push(newMessage._id);
@@ -46,7 +57,6 @@ export const sendMessage = async (req, res) => {
 
     await conversation.save();
 
-    // ✅ Now both sender and receiver are populated
     newMessage = await newMessage.populate([
       { path: "senderId", select: "username profilepicture" },
       { path: "receiverId", select: "username profilepicture" }
@@ -64,7 +74,7 @@ export const sendMessage = async (req, res) => {
       newMessage
     });
   } catch (error) {
-    console.log(error);
+    console.error("[Send Message Error]", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error"
@@ -72,11 +82,14 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-
 export const getMessages = async (req, res) => {
   try {
     const senderId = req.id;
     const receiverId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(receiverId)) {
+      return res.status(400).json({ message: "Invalid recipient ID", success: false });
+    }
 
     const conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] }
@@ -94,11 +107,11 @@ export const getMessages = async (req, res) => {
     }
 
     return res.status(200).json({
-      messages: conversation?.messages,
+      messages: conversation?.messages || [],
       success: true
     });
   } catch (error) {
-    console.log(error);
+    console.error("[Get Messages Error]", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error"

@@ -6,7 +6,6 @@ import Home from "./components/Home"
 import Profile from "./components/Profile"
 import EditProfile from "./components/EditProfile"
 import ChatPage from "./components/ChatPage"
-import AnalyticsDashboard from "./components/AnalyticsDashboard"
 import ResumeGenerator from "./components/ResumeGenerator"
 import ForgotPassword from "./components/ForgotPassword"
 import ResetPassword from "./components/ResetPassword"
@@ -41,10 +40,6 @@ const browserRouter = createBrowserRouter([
       {
         path: "/chat",
         element:  <ChatPage />
-      },
-      {
-        path: "/analytics",
-        element: <AnalyticsDashboard />
       }
     ]
   },

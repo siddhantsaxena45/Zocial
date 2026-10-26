@@ -15,15 +15,15 @@ Since we moved the Engagement Ledger from SQLite to MongoDB to ensure data persi
 ## 2. Deploy Backend to Render
 
 ### Step 2.1: Push to GitHub
-Ensure all your latest code (including the new `Dockerfile` and `start.sh`) is pushed to your GitHub repository.
+Ensure all your latest code (including the root `Dockerfile` and `docker-compose.yml`) is pushed to your GitHub repository.
 
 ### Step 2.2: Create Web Service
 1. Go to [Render Dashboard](https://dashboard.render.com/) and click **New > Web Service**.
 2. Connect your GitHub repository.
 3. In the setup, configure the following:
    - **Name:** `zocial-backend` (or similar)
-   - **Root Directory:** `backend` (very important!)
-   - **Environment:** `Docker` (Render should automatically detect the `Dockerfile`)
+   - **Root Directory:** leave blank or `.` (Dockerfile is now located at root!)
+   - **Environment:** `Docker` (Render will automatically detect the root `Dockerfile`)
    - **Instance Type:** Free
 
 ### Step 2.3: Environment Variables
@@ -41,8 +41,7 @@ Add the following Environment Variables in Render:
 | `GOOGLE_CLIENT_ID` | `499792ntent.com` |
 | `GOOGLE_CLIENT_SECRET` | `GOj2RjjA` |
 | `CLIENT_URL` | *(Leave blank for now, we will add the Vercel URL later!)* |
-| `GEMINI_API_KEY` | `AIzaSD...` |
-| `PYTHON_MICROSERVICE_URL`| `http://127.0.0.1:5000/api/v1/analyze` |
+| `GOOGLE_API_KEY1` ... `GOOGLE_API_KEY10` | 10 Google Gemini API Keys for automated rotation |
 
 4. Click **Create Web Service**. Wait for the build to finish.
 5. Once deployed, copy your Render URL (e.g., `https://zocial-backend-xxxx.onrender.com`).
@@ -84,5 +83,5 @@ Expand the Environment Variables section and add the following:
 
 🎉 **You are done!** 
 - Video Calls (WebRTC) use public Google STUN servers and will route perfectly since the sockets use your `VITE_SOCKET_URL`.
-- The Gemini Analytics Python microservice will run silently in the background of your Node instance.
+- The AI Resume Engine runs directly in Node.js powered by Gemini 2.5 Flash with fallback and 10-key rotator.
 - No data will be lost when Render sleeps!

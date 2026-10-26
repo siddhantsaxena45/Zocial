@@ -5,7 +5,6 @@ import {
   MessageCircle,
   PlusSquare,
   Search,
-  TrendingUp,
   Users,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -63,7 +62,6 @@ const LeftSidebar = () => {
       ),
       text: 'Profile',
     },
-    { icon: <TrendingUp />, text: 'Analytics' },
     { icon: <LogOut />, text: 'Logout' },
   ];
 
@@ -108,9 +106,6 @@ const LeftSidebar = () => {
     else if (text === "Messages") {
 
       navigate("/chat");
-    }
-    else if (text === "Analytics") {
-      navigate("/analytics");
     }
 
   }
@@ -183,7 +178,7 @@ const LeftSidebar = () => {
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-6 left-6 right-6 z-50 lg:hidden h-16 flex justify-around items-center rounded-2xl glass-card backdrop-blur-2xl px-2">
-        {sidebar.filter(item => ['Home', 'Notifications', 'Synergy', 'Messages', 'Create', 'Profile', 'Analytics'].includes(item.text)).map((item, index) => {
+        {sidebar.filter(item => ['Home', 'Notifications', 'Synergy', 'Messages', 'Create', 'Profile'].includes(item.text)).map((item, index) => {
           const mobileContent = (
             <div
               onClick={() => { if (item.text !== "Notifications") sidebarHandler(item.text) }}

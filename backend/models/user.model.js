@@ -23,6 +23,27 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    // 💼 Professional Profile Fields
+    targetRole: {
+        type: String,
+        default: "",
+    },
+    openToOpportunities: {
+        type: Boolean,
+        default: false,
+    },
+    hourlyRate: {
+        type: String,
+        default: "",
+    },
+    githubProfile: {
+        type: String,
+        default: "",
+    },
+    portfolioUrl: {
+        type: String,
+        default: "",
+    },
     skills: [{
         type: String,
     }],
@@ -30,15 +51,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
-    lastAnalyzedPostCount: {
-        type: Number,
-        default: 0,
-    },
-    lastAnalyzedInteractionCount: {
-        type: Number,
-        default: 0,
-    },
-    analytics_cache: {
+    resume_data: {
         type: Object,
         default: null
     },

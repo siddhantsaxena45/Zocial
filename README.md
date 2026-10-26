@@ -1,6 +1,6 @@
 # Zocial
 
-Zocial is a modern, feature-rich full-stack social media platform and professional networking application. It combines traditional social networking features—like real-time messaging, video calls, and media sharing—with an advanced AI-driven analytics engine that provides deep insights into user engagement, sentiment trends, and professional skills.
+Zocial is a modern, feature-rich full-stack social media platform and professional networking application. It combines traditional social networking features—like real-time messaging, video calls, and media sharing—with an automated Gemini AI Resume Builder that synthesizes posts and career transmissions into ATS-compliant professional resumes.
 
 ## 🚀 Features
 
@@ -8,13 +8,12 @@ Zocial is a modern, feature-rich full-stack social media platform and profession
 - **Real-Time Communication**: Live chat and instant notifications powered by Socket.io.
 - **Peer-to-Peer Video/Audio Calls**: Seamless WebRTC connections using `simple-peer`.
 - **Media Management**: Efficient image processing and cloud storage via Multer, DataURI, and Cloudinary.
-- **AI Analytics Engine**: A dedicated Python microservice leveraging Google Gemini AI for:
-  - Semantic reasoning and career summary generation.
-  - Sentiment analysis using VADER-lite algorithms.
-  - User engagement momentum tracking (EMA).
-  - Algorithmic influence ranking and professional skill extraction.
+- **AI Resume Generator**: Powered by Google Gemini 2.5 Flash (with automatic fallbacks to Gemini 3.8/3.5 Flash and an environment rotator with 10 API keys) for:
+  - Extracting high-impact technical competencies and domain expertise directly from user posts.
+  - Generating ATS-optimized executive career summaries.
+  - Formulating target professional headlines and project achievement highlights.
+  - One-click PDF resume export.
 - **Responsive & Modern UI**: Built with React 19, Tailwind CSS, and headless UI components (shadcn/ui via Radix UI).
-- **Interactive Dashboards**: Visualizing user analytics and sentiment trends utilizing Recharts.
 
 ## 🛠️ Tech Stack
 
@@ -25,30 +24,24 @@ Zocial is a modern, feature-rich full-stack social media platform and profession
 - **State Management**: Redux Toolkit, Redux Persist
 - **Routing**: React Router DOM
 - **Real-time & WebRTC**: Socket.io-client, Simple-peer
-- **Data Visualization**: Recharts
 
 ### Backend
-- **Runtime & Framework**: Node.js, Express
+- **Runtime & Framework**: Node.js (v20+), Express
 - **Database**: MongoDB (Mongoose)
+- **AI Engine**: Google Gemini API (`gemini-2.5-flash` with fallback cascade to `gemini-3.8-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.6-flash`, `gemini-3.1-flash-lite`)
+- **Key Rotation**: 10-Key Environment Rotator (`GOOGLE_API_KEY1` ... `GOOGLE_API_KEY10`)
 - **Authentication**: bcryptjs, jsonwebtoken, Google Auth Library
 - **Media Handling**: Cloudinary, Multer, Sharp
 - **Real-time**: Socket.io
-
-### AI & Analytics Microservice
-- **Language & Framework**: Python, FastAPI, Uvicorn
-- **Data Validation**: Pydantic
-- **AI Integration**: Google GenAI (`gemini-2.5-flash`)
-- **Core Logic**: NLP processing, EMA calculation, text sanitization
 
 ## 🏁 Getting Started
 
 ### Prerequisites
 - Node.js (v18+ recommended)
-- Python (v3.8+ recommended)
 - MongoDB (local or Atlas)
 - Cloudinary Account
 - Google Cloud Console Project (for OAuth)
-- Google Gemini API Key
+- Google Gemini API Keys (`GOOGLE_API_KEY1` ... `GOOGLE_API_KEY10`)
 
 ### Installation & Setup
 
@@ -63,27 +56,16 @@ Zocial is a modern, feature-rich full-stack social media platform and profession
    cd backend
    npm install
    ```
-   *Create a `.env` file in the `backend` directory with your MongoDB URI, JWT secrets, Cloudinary credentials, and Google Client IDs.*
+   *Configure your `.env` file in `backend` with your MongoDB URI, JWT secrets, Cloudinary credentials, and `GOOGLE_API_KEY1` through `GOOGLE_API_KEY10`.*
 
 3. **Frontend Setup:**
    ```bash
    cd ../frontend
    npm install
    ```
-   *Create a `.env` file in the `frontend` directory with your `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`.*
-
-4. **Analytics Engine Setup:**
-   ```bash
-   cd ../backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-   *Ensure you add `GEMINI_API_KEY` to the backend `.env` file (or a specific `.env` for the python script) to enable AI semantic features.*
+   *Configure your `.env` file in `frontend` with your `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`.*
 
 ### Running the Application
-
-Open separate terminal instances to run each component:
 
 **Backend Server:**
 ```bash
@@ -95,13 +77,6 @@ npm run dev
 ```bash
 cd frontend
 npm run dev
-```
-
-**Analytics Microservice (Optional/Standalone):**
-The analytics engine can be invoked automatically by the Node.js backend via shell execution, or it can run as an independent FastAPI microservice:
-```bash
-cd backend
-python analytics_engine.py --serve 5000
 ```
 
 ## 📄 License

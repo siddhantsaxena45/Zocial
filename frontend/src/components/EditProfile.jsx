@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Camera, User, FileText, ChevronRight, Sparkles } from 'lucide-react';
+import { Loader2, Camera, User, FileText, ChevronRight, Sparkles, Github, Globe, Briefcase, DollarSign, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { setAuthUser } from '@/redux/authSlice';
@@ -29,7 +29,12 @@ const EditProfile = () => {
     const [inputData, setInputData] = useState({
         profilephoto: user?.profilepicture || "",
         bio: user?.bio || "",
-        gender: user?.gender || ""
+        gender: user?.gender || "",
+        openToOpportunities: user?.openToOpportunities || false,
+        targetRole: user?.targetRole || "",
+        hourlyRate: user?.hourlyRate || "",
+        githubProfile: user?.githubProfile || "",
+        portfolioUrl: user?.portfolioUrl || ""
     });
     
     const [preview, setPreview] = useState(user?.profilepicture || "");
@@ -40,7 +45,12 @@ const EditProfile = () => {
             setInputData({
                 profilephoto: user.profilepicture,
                 bio: user.bio || "",
-                gender: user.gender || ""
+                gender: user.gender || "",
+                openToOpportunities: user.openToOpportunities || false,
+                targetRole: user.targetRole || "",
+                hourlyRate: user.hourlyRate || "",
+                githubProfile: user.githubProfile || "",
+                portfolioUrl: user.portfolioUrl || ""
             });
             setPreview(user.profilepicture);
         }
@@ -69,6 +79,11 @@ const EditProfile = () => {
         }
         formData.append("bio", inputData.bio);
         formData.append("gender", inputData.gender);
+        formData.append("openToOpportunities", inputData.openToOpportunities ? "true" : "false");
+        formData.append("targetRole", inputData.targetRole);
+        formData.append("hourlyRate", inputData.hourlyRate);
+        formData.append("githubProfile", inputData.githubProfile);
+        formData.append("portfolioUrl", inputData.portfolioUrl);
 
         try {
             setLoading(true);
@@ -81,7 +96,12 @@ const EditProfile = () => {
                     ...user,
                     profilepicture: response.data.user.profilepicture,
                     bio: response.data.user.bio,
-                    gender: response.data.user.gender
+                    gender: response.data.user.gender,
+                    openToOpportunities: response.data.user.openToOpportunities,
+                    targetRole: response.data.user.targetRole,
+                    hourlyRate: response.data.user.hourlyRate,
+                    githubProfile: response.data.user.githubProfile,
+                    portfolioUrl: response.data.user.portfolioUrl
                 };
                 dispatch(setAuthUser(updatedUser));
                 navigate(`/profile/${user._id}`);
@@ -171,7 +191,7 @@ const EditProfile = () => {
                                 />
                                 <p className="text-[10px] text-slate-400 font-medium px-1 flex items-center gap-1">
                                     <Sparkles className="h-3 w-3 text-indigo-400" />
-                                    Tip: Mentioning specific skills helps our NLP engine categorize your profile.
+                                    Tip: Mentioning specific skills helps our Gemini AI engine generate your tailored resume.
                                 </p>
                             </div>
                         </div>
@@ -202,6 +222,100 @@ const EditProfile = () => {
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                        </div>
+
+                        {/* Builder & Opportunity Metadata */}
+                        <div className="glass-card p-8 border border-white/60 shadow-xl space-y-6">
+                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                                <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                                    <Briefcase className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-wider">Synergy & Opportunities</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Builder Status & Professional Radar</p>
+                                </div>
+                            </div>
+
+                            {/* Open to Opportunities Switch */}
+                            <div className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="relative flex h-2.5 w-2.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                                        </span>
+                                        <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                                            Open to Opportunities / Gigs
+                                        </label>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500">
+                                        Display an active "Open to Work / Collaborations" radar badge on your profile card.
+                                    </p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={inputData.openToOpportunities}
+                                    onChange={(e) => setInputData({ ...inputData, openToOpportunities: e.target.checked })}
+                                    className="h-5 w-5 accent-emerald-600 rounded cursor-pointer"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                                        Target Role / Specialization
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Senior Full-Stack Engineer"
+                                        value={inputData.targetRole}
+                                        onChange={(e) => setInputData({ ...inputData, targetRole: e.target.value })}
+                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                                        Contract / Hourly Rate
+                                    </label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. $85/hr or $6,000/mo"
+                                            value={inputData.hourlyRate}
+                                            onChange={(e) => setInputData({ ...inputData, hourlyRate: e.target.value })}
+                                            className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 pl-9 pr-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+                                        <Github className="h-3.5 w-3.5 text-slate-600" /> GitHub Profile
+                                    </label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://github.com/username"
+                                        value={inputData.githubProfile}
+                                        onChange={(e) => setInputData({ ...inputData, githubProfile: e.target.value })}
+                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+                                        <Globe className="h-3.5 w-3.5 text-slate-600" /> Portfolio Website
+                                    </label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://yourportfolio.dev"
+                                        value={inputData.portfolioUrl}
+                                        onChange={(e) => setInputData({ ...inputData, portfolioUrl: e.target.value })}
+                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
+                                    />
+                                </div>
                             </div>
                         </div>
 

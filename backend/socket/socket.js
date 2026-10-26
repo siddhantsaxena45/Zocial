@@ -1,33 +1,54 @@
 import { Server } from "socket.io";
 import express from "express";
 import http from "http";
+
 const app = express();
 const server = http.createServer(app);
+
+const rawClientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/+$/, "") : "";
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    rawClientUrl
+].filter(Boolean);
+
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:5173",process.env.CLIENT_URL],
-        methods: ["GET", "POST", "DELETE"],
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Socket CORS rejected"));
+            }
+        },
+        methods: ["GET", "POST"],
         credentials: true
     },
 });
-const userSocketMap = {};
 
-export const getReciverId = (receiverId) => userSocketMap[receiverId];
+// Map prevents object prototype pollution
+const userSocketMap = new Map();
+
+export const getReciverId = (receiverId) => {
+    if (!receiverId) return null;
+    return userSocketMap.get(receiverId.toString());
+};
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
-  if (userId) {
-    userSocketMap[userId] = socket.id;
-    console.log(`user connected ${userId}, socket id ${socket.id}`);
+  
+  if (userId && typeof userId === "string") {
+    userSocketMap.set(userId, socket.id);
   }
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  
+  io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
 
   socket.on("disconnect", () => {
     if (userId) {
-      delete userSocketMap[userId];
-      console.log(`user disconnected ${userId}, socket id ${socket.id}`);
+      userSocketMap.delete(userId);
     }
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    io.emit("getOnlineUsers", Array.from(userSocketMap.keys()));
   });
 
   // Video offer
@@ -84,4 +105,4 @@ io.on("connection", (socket) => {
   });
 });
 
-export {app,server,io};
+export { app, server, io };
