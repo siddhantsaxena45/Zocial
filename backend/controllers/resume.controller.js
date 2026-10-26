@@ -47,6 +47,8 @@ export const buildResumeForUserInternal = async (targetUserId) => {
 
             user.skills = starterResume.skills;
             user.ai_summary = starterResume.ai_summary;
+            user.targetRole = starterResume.headline;
+            user.bio = starterResume.ai_summary;
             user.resume_data = starterResume;
             await user.save();
 
@@ -162,6 +164,8 @@ Return strictly valid raw JSON following this schema:
 
         user.skills = sanitizedResume.skills;
         user.ai_summary = sanitizedResume.ai_summary;
+        user.targetRole = sanitizedResume.headline;
+        user.bio = sanitizedResume.ai_summary;
         user.resume_data = sanitizedResume;
         await user.save();
 
@@ -197,6 +201,10 @@ Return strictly valid raw JSON following this schema:
                     generatedAt: new Date()
                 };
 
+                user.skills = fallbackResume.skills;
+                user.ai_summary = fallbackResume.ai_summary;
+                user.targetRole = fallbackResume.headline;
+                user.bio = fallbackResume.ai_summary;
                 user.resume_data = fallbackResume;
                 await user.save();
 

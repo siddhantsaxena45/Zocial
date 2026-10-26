@@ -334,24 +334,24 @@ const Profile = () => {
                                         )}
                                     </div>
                                 </div>
-                                <p className="text-slate-500 font-bold italic tracking-wide">
-                                    {userProfile.bio || "Digital Innovation Strategist • Data Analysis Specialist"}
+                                <p className="text-slate-700 font-bold tracking-tight text-sm md:text-base">
+                                    {userProfile?.resume_data?.headline || userProfile?.targetRole || (userProfile?.posts?.length > 0 ? "Verified Technical Builder" : "Builder on Zocial")}
                                 </p>
 
-                                {(userProfile?.targetRole || userProfile?.hourlyRate || userProfile?.githubProfile || userProfile?.portfolioUrl) && (
+                                {(userProfile?.resume_data?.ai_summary || userProfile?.ai_summary || userProfile?.bio) && (
+                                    <p className="text-xs md:text-sm text-slate-500 font-medium leading-relaxed max-w-2xl italic">
+                                        "{userProfile?.resume_data?.ai_summary || userProfile?.ai_summary || userProfile?.bio}"
+                                    </p>
+                                )}
+
+                                {((userProfile?.resume_data?.skills || userProfile?.skills || []).length > 0 || userProfile?.githubProfile || userProfile?.portfolioUrl) && (
                                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
-                                        {userProfile?.targetRole && (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold">
-                                                <Briefcase className="h-3.5 w-3.5 text-indigo-500" />
-                                                {userProfile.targetRole}
+                                        {(userProfile?.resume_data?.skills || userProfile?.skills || []).slice(0, 8).map((skill, idx) => (
+                                            <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50/80 border border-indigo-100 text-indigo-700 text-xs font-semibold">
+                                                <Sparkles className="h-3 w-3 text-indigo-400" />
+                                                {skill}
                                             </span>
-                                        )}
-                                        {userProfile?.hourlyRate && (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold">
-                                                <DollarSign className="h-3.5 w-3.5 text-slate-500" />
-                                                {userProfile.hourlyRate}
-                                            </span>
-                                        )}
+                                        ))}
                                         {userProfile?.githubProfile && (
                                             <a
                                                 href={userProfile.githubProfile.startsWith('http') ? userProfile.githubProfile : `https://${userProfile.githubProfile}`}
