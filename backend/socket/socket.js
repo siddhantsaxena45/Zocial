@@ -210,6 +210,17 @@ io.on("connection", (socket) => {
       });
     }
   });
+
+  // 🔄 Synergy Video Call Mode Sync (Video, Pair-Code, Whiteboard)
+  socket.on("call_mode_change", ({ to, mode }) => {
+    const receiverSocketId = getReciverId(to);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("call_mode_update", {
+        from: userId,
+        mode
+      });
+    }
+  });
 });
 
 export { app, server, io };
