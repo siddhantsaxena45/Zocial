@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
+import { setAuthChecked } from '@/redux/authSlice'
 
 const ProtectedRoutes = ({ children }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, isAuthChecked } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -12,6 +14,16 @@ const ProtectedRoutes = ({ children }) => {
       navigate("/login");
     }
   }, [user, isAuthChecked, navigate]);
+
+  // Safety fallback: if auth verification takes > 3.5s (e.g. backend spinup or empty cache), allow navigation to /login
+  useEffect(() => {
+    if (!user && !isAuthChecked) {
+      const timer = setTimeout(() => {
+        dispatch(setAuthChecked(true));
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isAuthChecked, dispatch]);
 
   // If user is already loaded, render immediately
   if (user) {

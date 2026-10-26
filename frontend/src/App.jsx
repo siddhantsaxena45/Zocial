@@ -75,25 +75,32 @@ function App() {
   const { socket } = useSelector(state => state.socketio)
   const dispatch = useDispatch()
 
-  // 🔄 Global Sync: Refresh user data from server on every page load/refresh
-  // This bypasses stale localStorage data from redux-persist.
+  // 🔄 Global Sync: Always verify user authentication from server on page load/refresh
   useEffect(() => {
     const fetchMe = async () => {
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/me`, { withCredentials: true });
-        if (res.data.success) {
+        if (res.data.success && res.data.user) {
           dispatch(setAuthUser(res.data.user));
+        } else {
+          dispatch(setAuthChecked(true));
         }
       } catch (error) {
         console.error("Failed to refresh auth user:", error);
+        dispatch(setAuthChecked(true));
       }
     };
 
+    fetchMe();
+  }, [dispatch]);
+
+  // Fetch notifications once user is verified
+  useEffect(() => {
+    if (!user) return;
     const fetchNotifications = async () => {
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/notification`, { withCredentials: true });
         if (res.data.success) {
-          // Map backend format to frontend format
           const formattedNotifications = res.data.notifications.map(notif => ({
             userId: notif.sender._id,
             userDetails: notif.sender,
@@ -110,11 +117,8 @@ function App() {
       }
     };
 
-    if (user) {
-      fetchMe();
-      fetchNotifications();
-    }
-  }, [dispatch]);
+    fetchNotifications();
+  }, [user?._id, dispatch]);
 
   const userId = user?._id;
 
