@@ -21,7 +21,10 @@ import { setMessageNotification } from "./redux/messageNotificationSlice";
 import { setIncomingCall, resetCall } from "./redux/callSlice";
 import ProtectedRoutes from "./components/ProtectedRoutes"
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import BountyHub from "./components/BountyHub";
+import ZocialScout from "./components/ZocialScout";
 import GlobalCallManager from "./components/GlobalCallManager";
+
 const browserRouter = createBrowserRouter([
   {
     path: "/",
@@ -40,6 +43,14 @@ const browserRouter = createBrowserRouter([
       {
         path: "/chat",
         element:  <ChatPage />
+      },
+      {
+        path: "/bounties",
+        element:  <BountyHub />
+      },
+      {
+        path: "/scout",
+        element:  <ZocialScout />
       }
     ]
   },

@@ -34,12 +34,33 @@ const postSchema = new mongoose.Schema({
     tags: [{
         type: String,
     }],
-    // 🤝 Synergy Collaborator (Proof of Teamwork)
+    codeSnippet: {
+        type: String,
+        default: "",
+    },
+    codeLanguage: {
+        type: String,
+        default: "javascript",
+    },
+    // 🤝 Synergy Collaborator & Peer-Vouching (Anti-Fraud)
     collaboratorUsername: {
         type: String,
         default: "",
     },
-    // 💼 Bounties / Freelance Deliverables
+    collaboratorRole: {
+        type: String,
+        default: "Co-Developer",
+    },
+    vouchStatus: {
+        type: String,
+        enum: ["none", "pending", "accepted", "declined"],
+        default: "none",
+    },
+    vouchedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
+    // 💼 Bounties / Freelance Deliverables & Micro-Gigs
     isBounty: {
         type: Boolean,
         default: false,
@@ -47,6 +68,11 @@ const postSchema = new mongoose.Schema({
     bountyAmount: {
         type: String,
         default: "",
+    },
+    bountyType: {
+        type: String,
+        enum: ["service_offered", "task_bounty"],
+        default: "service_offered",
     }
 }, {
     timestamps: true,

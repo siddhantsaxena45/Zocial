@@ -1,5 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Bookmark, MessageCircle, MoreHorizontal, Send, Zap, Users, TrendingUp, Github, ExternalLink, Sparkles, DollarSign, Handshake } from 'lucide-react'
+import { 
+    Bookmark, MessageCircle, MoreHorizontal, Send, Zap, Users, TrendingUp, 
+    Github, ExternalLink, Sparkles, DollarSign, Handshake, Check, Copy, 
+    Code, CheckCircle2, ShieldCheck, Play, Eye, ChevronDown, ChevronUp, Briefcase 
+} from 'lucide-react'
 
 import { FaBookmark, FaHeart, FaRegHeart } from "react-icons/fa";
 
@@ -7,6 +11,8 @@ import React, { useState } from 'react'
 import {
     Dialog,
     DialogContent,
+    DialogHeader,
+    DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from './ui/button'
@@ -18,10 +24,11 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Badge } from './ui/badge';
 import { updateBookmarks } from '@/redux/authSlice';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Post = ({ post }) => {
     const dispatch = useDispatch()
+    const navigate = useNavigate()
     const { user } = useSelector(state => state.auth)
     const { posts } = useSelector(state => state.post)
     const [text, setText] = useState("")
@@ -32,6 +39,13 @@ const Post = ({ post }) => {
     const [editedCaptionText, setEditedCaptionText] = useState(post.caption || "")
     const [isSavingCaption, setIsSavingCaption] = useState(false)
     
+    // Interactive Artifact & Proof-of-Work State
+    const [showCode, setShowCode] = useState(false);
+    const [copiedCode, setCopiedCode] = useState(false);
+    const [sandboxOpen, setSandboxOpen] = useState(false);
+    const [vouchStatus, setVouchStatus] = useState(post.vouchStatus || "none");
+    const [vouchLoading, setVouchLoading] = useState(false);
+
     // Auto-close overlay dialogs on route navigation
     const location = useLocation();
     React.useEffect(() => {
@@ -43,6 +57,37 @@ const Post = ({ post }) => {
     const userHasLiked = post.likes.some(like => (like._id || like) === user._id);
     const [isliked, setIsLiked] = useState(userHasLiked)
     const [postlikes, setPostLikes] = useState(post.likes.length)
+
+    // Check if the logged-in user is designated as collaborator
+    const isDesignatedCollaborator = user && post.collaboratorUsername && (
+        user.username?.toLowerCase() === post.collaboratorUsername.toLowerCase() ||
+        (post.vouchedBy && (post.vouchedBy._id || post.vouchedBy) === user._id)
+    );
+
+    const handleVouch = async (action) => {
+        try {
+            setVouchLoading(true);
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/post/${post._id}/vouch`, { action }, { withCredentials: true });
+            if (res.data.success) {
+                setVouchStatus(res.data.post.vouchStatus);
+                toast.success(res.data.message);
+                const updatedPosts = posts.map(p => p._id === post._id ? { ...p, vouchStatus: res.data.post.vouchStatus } : p);
+                dispatch(setPosts(updatedPosts));
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to update vouch");
+        } finally {
+            setVouchLoading(false);
+        }
+    };
+
+    const copyCodeHandler = () => {
+        if (!post.codeSnippet) return;
+        navigator.clipboard.writeText(post.codeSnippet);
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 2000);
+        toast.success("Code snippet copied to clipboard");
+    };
     
 
 
@@ -369,7 +414,7 @@ const handleShare = async (imageUrl) => {
                     </div>
 
                     {/* 🛠️ Proof-of-Work & Synergy Artifacts */}
-                    {(post.tags?.length > 0 || post.githubUrl || post.liveUrl || post.collaboratorUsername || post.isBounty) && (
+                    {(post.tags?.length > 0 || post.githubUrl || post.liveUrl || post.codeSnippet || post.collaboratorUsername || post.isBounty) && (
                         <div className="pt-2 pb-1 space-y-2 border-t border-slate-100/80">
                             {/* Tech Stack Tags */}
                             {post.tags && post.tags.length > 0 && (
@@ -382,7 +427,7 @@ const handleShare = async (imageUrl) => {
                                 </div>
                             )}
 
-                            {/* Artifact Links & Synergy */}
+                            {/* Artifact Links & Actions */}
                             <div className="flex flex-wrap items-center gap-2 pt-0.5">
                                 {post.githubUrl && (
                                     <a
@@ -392,39 +437,152 @@ const handleShare = async (imageUrl) => {
                                         className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 px-2.5 py-1 rounded-lg transition-all"
                                     >
                                         <Github className="h-3 w-3" />
-                                        <span>Code Artifact</span>
+                                        <span>Live Code Repo</span>
                                         <ExternalLink className="h-2.5 w-2.5 opacity-60" />
                                     </a>
                                 )}
 
                                 {post.liveUrl && (
-                                    <a
-                                        href={post.liveUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        onClick={() => setSandboxOpen(true)}
                                         className="inline-flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition-all"
                                     >
                                         <Sparkles className="h-3 w-3 text-indigo-500" />
-                                        <span>Live Demo</span>
-                                        <ExternalLink className="h-2.5 w-2.5 opacity-60" />
-                                    </a>
+                                        <span>Interactive Sandbox</span>
+                                        <Eye className="h-2.5 w-2.5 opacity-60" />
+                                    </button>
                                 )}
 
-                                {post.collaboratorUsername && (
+                                {post.codeSnippet && (
+                                    <button
+                                        onClick={() => setShowCode(!showCode)}
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-2.5 py-1 rounded-lg transition-all"
+                                    >
+                                        <Code className="h-3 w-3 text-indigo-600" />
+                                        <span>Inspect Code ({post.codeLanguage || 'js'})</span>
+                                        {showCode ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
+                                    </button>
+                                )}
+
+                                {/* Peer Verified Synergy Badge */}
+                                {vouchStatus === "accepted" && post.collaboratorUsername && (
+                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg shadow-sm">
+                                        <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                                        <span>Peer-Verified Synergy with @{post.collaboratorUsername}</span>
+                                    </span>
+                                )}
+
+                                {vouchStatus !== "accepted" && post.collaboratorUsername && (
                                     <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-lg">
                                         <Handshake className="h-3.5 w-3.5 text-purple-600" />
                                         <span>Synergy with @{post.collaboratorUsername}</span>
                                     </span>
                                 )}
-
-                                {post.isBounty && (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                                        <DollarSign className="h-3 w-3 text-emerald-600" />
-                                        <span>Bounty Deliverable {post.bountyAmount ? `(${post.bountyAmount})` : ''}</span>
-                                    </span>
-                                )}
                             </div>
+
+                            {/* Peer Vouch Request Action for Designated Collaborator */}
+                            {isDesignatedCollaborator && vouchStatus === "pending" && (
+                                <div className="w-full p-2.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl space-y-1.5 mt-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-bold text-purple-900 flex items-center gap-1.5">
+                                            <Handshake className="h-4 w-4 text-purple-600" />
+                                            @{post.author?.username} tagged you as {post.collaboratorRole || 'Co-Developer'}. Vouch for this synergy?
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleVouch('accept')}
+                                            disabled={vouchLoading}
+                                            className="text-[10px] font-black uppercase tracking-wider px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all shadow-sm"
+                                        >
+                                            {vouchLoading ? "Verifying..." : "Vouch for Project"}
+                                        </button>
+                                        <button
+                                            onClick={() => handleVouch('decline')}
+                                            disabled={vouchLoading}
+                                            className="text-[10px] font-bold text-slate-500 hover:text-red-600 px-2 py-1"
+                                        >
+                                            Decline
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Code Snippet Inspector Box */}
+                            {showCode && post.codeSnippet && (
+                                <div className="mt-2 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-2xl">
+                                    <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-slate-800 text-slate-400 text-[11px]">
+                                        <span className="font-mono font-bold text-emerald-400 uppercase tracking-widest text-[10px]">
+                                            {post.codeLanguage || 'javascript'} artifact
+                                        </span>
+                                        <button
+                                            onClick={copyCodeHandler}
+                                            className="hover:text-white flex items-center gap-1 transition-colors text-[10px]"
+                                        >
+                                            {copiedCode ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                                            {copiedCode ? "Copied!" : "Copy"}
+                                        </button>
+                                    </div>
+                                    <pre className="p-3 text-[11px] font-mono text-slate-200 overflow-x-auto max-h-56 leading-relaxed">
+                                        <code>{post.codeSnippet}</code>
+                                    </pre>
+                                </div>
+                            )}
+
+                            {/* Micro-Gig / Bounty Card */}
+                            {post.isBounty && (
+                                <div className="flex items-center justify-between w-full p-2.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800">
+                                            <DollarSign className="h-4 w-4" />
+                                        </span>
+                                        <div>
+                                            <p className="text-[11px] font-black uppercase tracking-wide text-emerald-900">
+                                                {post.bountyType === 'task_bounty' ? 'Open Task Bounty' : 'Micro-Gig Deliverable'}
+                                            </p>
+                                            {post.bountyAmount && (
+                                                <p className="text-[10px] font-bold text-emerald-700">Budget / Reward: {post.bountyAmount}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => navigate('/chat')}
+                                        className="text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-sm"
+                                    >
+                                        {post.bountyType === 'task_bounty' ? 'Claim Bounty' : 'Commission Deliverable'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
+                    )}
+
+                    {/* Live Sandbox Preview Dialog */}
+                    {post.liveUrl && (
+                        <Dialog open={sandboxOpen} onOpenChange={setSandboxOpen}>
+                            <DialogContent className="max-w-4xl w-[95vw] h-[85vh] p-0 flex flex-col rounded-2xl overflow-hidden bg-white shadow-2xl">
+                                <DialogHeader className="p-4 border-b border-slate-100 flex flex-row items-center justify-between">
+                                    <DialogTitle className="text-sm font-black flex items-center gap-2 text-slate-900">
+                                        <Sparkles className="h-4 w-4 text-indigo-600" /> Live Interactive Sandbox
+                                    </DialogTitle>
+                                    <a
+                                        href={post.liveUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1 mr-6"
+                                    >
+                                        Open External <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                </DialogHeader>
+                                <div className="flex-1 w-full h-full bg-slate-50 relative">
+                                    <iframe
+                                        src={post.liveUrl}
+                                        title="Live Artifact Preview"
+                                        className="w-full h-full border-none"
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                    />
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     )}
 
                     {post.comments.length > 0 && (

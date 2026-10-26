@@ -103,6 +103,39 @@ io.on("connection", (socket) => {
       });
     }
   });
+
+  // 💻 Pair Programming Real-Time Code Sync
+  socket.on("pair_code_change", ({ to, code, language, cursor }) => {
+    const receiverSocketId = getReciverId(to);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("pair_code_update", {
+        from: userId,
+        code,
+        language,
+        cursor
+      });
+    }
+  });
+
+  // 🎨 Collaborative Whiteboard Canvas Draw Sync
+  socket.on("whiteboard_draw", ({ to, drawData }) => {
+    const receiverSocketId = getReciverId(to);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("whiteboard_draw_update", {
+        from: userId,
+        drawData
+      });
+    }
+  });
+
+  socket.on("whiteboard_clear", ({ to }) => {
+    const receiverSocketId = getReciverId(to);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("whiteboard_cleared", {
+        from: userId
+      });
+    }
+  });
 });
 
 export { app, server, io };

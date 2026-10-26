@@ -784,4 +784,98 @@ export const getMe = async (req, res) => {
         console.error(error);
         return res.status(500).json({ message: "Server error", success: false });
     }
-}
+};
+
+/**
+ * 🔍 Recruiter Search Portal ("Zocial Scout")
+ * Enables recruiters to search candidates by verified skills, proof-of-work transmissions,
+ * role specialization, and gig availability.
+ */
+export const scoutCandidates = async (req, res) => {
+    try {
+        const { skills, role, openOnly, query } = req.query;
+
+        const filter = {};
+
+        if (String(openOnly) === "true") {
+            filter.openToOpportunities = true;
+        }
+
+        if (role && role.trim()) {
+            filter.targetRole = new RegExp(role.trim(), "i");
+        }
+
+        if (query && query.trim()) {
+            const regex = new RegExp(query.trim(), "i");
+            filter.$or = [
+                { username: regex },
+                { bio: regex },
+                { targetRole: regex },
+                { skills: regex }
+            ];
+        }
+
+        const parsedSkillKeywords = skills 
+            ? skills.split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+            : [];
+
+        let candidates = await User.find(filter)
+            .select("-password")
+            .populate({
+                path: "posts",
+                options: { sort: { createdAt: -1 }, limit: 6 },
+                select: "caption image githubUrl liveUrl tags isBounty bountyAmount createdAt"
+            });
+
+        // Filter and score candidates based on skill match
+        const scoredCandidates = candidates.map(candidate => {
+            const candidateSkills = (candidate.skills || []).map(s => s.toLowerCase());
+            
+            // Collect tags from candidate transmissions as demonstrated skills
+            const transmissionTags = (candidate.posts || []).flatMap(p => p.tags || []).map(t => t.toLowerCase());
+            const allCandidateTags = new Set([...candidateSkills, ...transmissionTags]);
+
+            let matchedSkills = [];
+            let matchScore = 75; // baseline interest score
+
+            if (parsedSkillKeywords.length > 0) {
+                matchedSkills = parsedSkillKeywords.filter(k => 
+                    [...allCandidateTags].some(tag => tag.includes(k) || k.includes(tag))
+                );
+                matchScore = Math.round((matchedSkills.length / parsedSkillKeywords.length) * 100);
+            }
+
+            return {
+                _id: candidate._id,
+                username: candidate.username,
+                profilepicture: candidate.profilepicture,
+                bio: candidate.bio,
+                targetRole: candidate.targetRole || "Software Builder",
+                hourlyRate: candidate.hourlyRate || "Flexible",
+                openToOpportunities: candidate.openToOpportunities,
+                githubProfile: candidate.githubProfile,
+                portfolioUrl: candidate.portfolioUrl,
+                skills: candidate.skills || [],
+                matchedSkills,
+                matchScore: parsedSkillKeywords.length > 0 ? matchScore : 85,
+                proofOfWorkCount: candidate.posts?.length || 0,
+                transmissions: candidate.posts || []
+            };
+        });
+
+        // Sort candidates: highest match score first, then by verified proof-of-work count
+        scoredCandidates.sort((a, b) => {
+            if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+            return b.proofOfWorkCount - a.proofOfWorkCount;
+        });
+
+        return res.status(200).json({
+            success: true,
+            total: scoredCandidates.length,
+            candidates: scoredCandidates
+        });
+    } catch (error) {
+        console.error("[Zocial Scout Error]", error);
+        return res.status(500).json({ message: "Server error querying candidates", success: false });
+    }
+};

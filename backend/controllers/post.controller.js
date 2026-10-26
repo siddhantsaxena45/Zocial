@@ -16,9 +16,13 @@ export const addPost = async (req, res) => {
             githubUrl, 
             liveUrl, 
             tags, 
+            codeSnippet,
+            codeLanguage,
             collaboratorUsername, 
+            collaboratorRole,
             isBounty, 
-            bountyAmount 
+            bountyAmount,
+            bountyType 
         } = req.body;
         const authorId = req.id;
         const image = req.file;
@@ -45,16 +49,30 @@ export const addPost = async (req, res) => {
             parsedTags = tags.split(',').map(t => t.trim()).filter(Boolean);
         }
 
+        const cleanCollabUsername = (collaboratorUsername || "").replace(/^@/, "").trim();
+        let targetCollaborator = null;
+        if (cleanCollabUsername) {
+            targetCollaborator = await User.findOne({ 
+                username: new RegExp(`^${cleanCollabUsername}$`, 'i') 
+            });
+        }
+
         const post = await Post.create({ 
             caption: sanitizedCaption, 
             author: authorId, 
             image: cloudResponse.secure_url,
             githubUrl: (githubUrl || "").trim(),
             liveUrl: (liveUrl || "").trim(),
-            tags: parsedTags.slice(0, 8),
-            collaboratorUsername: (collaboratorUsername || "").replace(/^@/, "").trim(),
+            tags: parsedTags.slice(0, 10),
+            codeSnippet: (codeSnippet || "").substring(0, 10000),
+            codeLanguage: (codeLanguage || "javascript").toLowerCase(),
+            collaboratorUsername: cleanCollabUsername,
+            collaboratorRole: (collaboratorRole || "Co-Developer").substring(0, 60),
+            vouchStatus: targetCollaborator && targetCollaborator._id.toString() !== authorId ? "pending" : "none",
+            vouchedBy: targetCollaborator && targetCollaborator._id.toString() !== authorId ? targetCollaborator._id : null,
             isBounty: String(isBounty) === 'true',
-            bountyAmount: (bountyAmount || "").trim()
+            bountyAmount: (bountyAmount || "").trim(),
+            bountyType: bountyType === 'task_bounty' ? 'task_bounty' : 'service_offered'
         });
         
         const user = await User.findById(authorId);
@@ -63,30 +81,26 @@ export const addPost = async (req, res) => {
             await user.save();
         }
 
-        // Notify tagged collaborator if specified
-        if (post.collaboratorUsername) {
-            const collaborator = await User.findOne({ 
-                username: new RegExp(`^${post.collaboratorUsername}$`, 'i') 
+        // Notify tagged collaborator for peer vouching
+        if (targetCollaborator && targetCollaborator._id.toString() !== authorId) {
+            await Notification.create({
+                recipient: targetCollaborator._id,
+                sender: authorId,
+                type: 'synergyTag',
+                post: post._id,
+                message: `${user?.username || 'A colleague'} tagged you as ${post.collaboratorRole} on their transmission: "${sanitizedCaption.substring(0, 50)}...". Please vouch for this project.`
             });
-            if (collaborator && collaborator._id.toString() !== authorId) {
-                await Notification.create({
-                    recipient: collaborator._id,
-                    sender: authorId,
-                    type: 'synergyTag',
-                    post: post._id,
-                    message: `${user?.username || 'A colleague'} tagged you as a collaborator on their transmission.`
-                });
 
-                const collaboratorSocketId = getReciverId(collaborator._id);
-                if (collaboratorSocketId) {
-                    io.to(collaboratorSocketId).emit("notification", {
-                        type: 'synergyTag',
-                        userId: authorId,
-                        userDetails: user,
-                        postId: post._id,
-                        message: `${user?.username || 'A colleague'} tagged you as a collaborator.`
-                    });
-                }
+            const collaboratorSocketId = getReciverId(targetCollaborator._id);
+            if (collaboratorSocketId) {
+                io.to(collaboratorSocketId).emit("notification", {
+                    type: 'synergyTag',
+                    userId: authorId,
+                    userDetails: user,
+                    postId: post._id,
+                    role: post.collaboratorRole,
+                    message: `${user?.username || 'A colleague'} requested your peer vouch for a collaborative transmission.`
+                });
             }
         }
 
@@ -430,5 +444,114 @@ export const bookmarkPost = async (req, res) => {
     } catch (error) {
         console.error("[Bookmark Error]", error);
         return res.status(500).json({ message: "Internal server error", success: false });
+    }
+};
+
+/**
+ * 🤝 Peer Collaborator Vouching (Anti-Fraud Reputation)
+ * The tagged collaborator can accept or decline attribution.
+ */
+export const vouchPost = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const userId = req.id;
+        const { action } = req.body; // 'accept' or 'decline'
+
+        if (!isValidId(postId)) {
+            return res.status(400).json({ message: "Invalid post ID", success: false });
+        }
+
+        const post = await Post.findById(postId).populate('author', 'username profilepicture');
+        if (!post) {
+            return res.status(404).json({ message: "Transmission not found", success: false });
+        }
+
+        const currentUser = await User.findById(userId);
+        if (!currentUser) {
+            return res.status(404).json({ message: "User not found", success: false });
+        }
+
+        // Verify that this user is indeed the tagged collaborator
+        const isTaggedByUsername = post.collaboratorUsername && 
+            post.collaboratorUsername.toLowerCase() === currentUser.username.toLowerCase();
+        const isTaggedById = post.vouchedBy && post.vouchedBy.toString() === userId;
+
+        if (!isTaggedByUsername && !isTaggedById) {
+            return res.status(403).json({ 
+                message: "You are not designated as the collaborator on this transmission.", 
+                success: false 
+            });
+        }
+
+        if (action === "accept") {
+            post.vouchStatus = "accepted";
+            post.vouchedBy = userId;
+            await post.save();
+
+            // Notify the original author
+            await Notification.create({
+                recipient: post.author._id,
+                sender: userId,
+                type: 'vouchAccepted',
+                post: post._id,
+                message: `@${currentUser.username} officially vouched for your collaboration on "${post.caption.substring(0, 40)}...". Synergy badge verified!`
+            });
+
+            const authorSocketId = getReciverId(post.author._id);
+            if (authorSocketId) {
+                io.to(authorSocketId).emit("notification", {
+                    type: 'vouchAccepted',
+                    userId: userId,
+                    userDetails: currentUser,
+                    postId: post._id,
+                    message: `@${currentUser.username} verified peer synergy on your transmission!`
+                });
+            }
+
+            return res.status(200).json({ 
+                message: "Collaboration verified! Synergy badge is now active.", 
+                success: true, 
+                post 
+            });
+        } else {
+            post.vouchStatus = "declined";
+            await post.save();
+
+            return res.status(200).json({ 
+                message: "Collaboration vouch declined.", 
+                success: true, 
+                post 
+            });
+        }
+    } catch (error) {
+        console.error("[Vouch Post Error]", error);
+        return res.status(500).json({ message: "Server error updating vouch", success: false });
+    }
+};
+
+/**
+ * 💼 Get All Open Bounties & Micro-Gigs
+ */
+export const getBountyPosts = async (req, res) => {
+    try {
+        const { type } = req.query; // 'service_offered', 'task_bounty', or undefined (all)
+        
+        const filter = { isBounty: true };
+        if (type && ['service_offered', 'task_bounty'].includes(type)) {
+            filter.bountyType = type;
+        }
+
+        const bounties = await Post.find(filter)
+            .sort({ createdAt: -1 })
+            .populate({ path: 'author', select: 'username profilepicture bio openToOpportunities targetRole hourlyRate' })
+            .populate({ path: 'comments', sort: { createdAt: -1 }, populate: { path: 'author', select: 'username profilepicture' } });
+
+        return res.status(200).json({
+            success: true,
+            bounties
+        });
+    } catch (error) {
+        console.error("[Get Bounties Error]", error);
+        return res.status(500).json({ message: "Server error fetching bounties", success: false });
     }
 };

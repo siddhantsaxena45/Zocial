@@ -16,6 +16,13 @@ import {
   Camera,
   CameraOff,
   Repeat,
+  Code,
+  Paintbrush,
+  Eraser,
+  Trash2,
+  Copy,
+  Check,
+  Sparkles,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setActiveCall, setIncomingCall, resetCall, toggleMute, toggleCamera } from "@/redux/callSlice";
@@ -93,6 +100,19 @@ const GlobalCallManager = () => {
   const [facingMode, setFacingMode] = useState("user");
   const [loading, setLoading] = useState(false);
   const [isCallAccepted, setIsCallAccepted] = useState(false);
+
+  // Technical Pair-Programming & Whiteboard State
+  const [callMode, setCallMode] = useState("video"); // 'video', 'pair_code', 'whiteboard'
+  const [pairCode, setPairCode] = useState(`// 💻 Zocial Live Pair-Programming Session\n// Code updates synchronize in real-time with your partner.\n\nfunction calculateSynergy(builderA, builderB) {\n  return "10x Engineering Velocity";\n}\n\nconsole.log(calculateSynergy());\n`);
+  const [pairLanguage, setPairLanguage] = useState("javascript");
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [brushColor, setBrushColor] = useState("#6366f1");
+  const [brushSize, setBrushSize] = useState(3);
+  const [isEraser, setIsEraser] = useState(false);
+
+  const canvasRef = useRef(null);
+  const isDrawing = useRef(false);
+  const lastPos = useRef({ x: 0, y: 0 });
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -242,11 +262,45 @@ const GlobalCallManager = () => {
         iceCandidatesBuffer.current.push(candidate);
       }
     };
+    const handlePairCodeUpdate = ({ code, language }) => {
+      setPairCode(code);
+      if (language) setPairLanguage(language);
+    };
+
+    const handleWhiteboardDraw = ({ drawData }) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      ctx.beginPath();
+      ctx.moveTo(drawData.prevX, drawData.prevY);
+      ctx.lineTo(drawData.currX, drawData.currY);
+      ctx.strokeStyle = drawData.isEraser ? "#020617" : drawData.color;
+      ctx.lineWidth = drawData.isEraser ? drawData.size * 4 : drawData.size;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.closePath();
+    };
+
+    const handleWhiteboardClear = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+
     socket.on("video-answer", handleVideoAnswer);
     socket.on("ice-candidate", handleIceCandidate);
+    socket.on("pair_code_update", handlePairCodeUpdate);
+    socket.on("whiteboard_draw_update", handleWhiteboardDraw);
+    socket.on("whiteboard_cleared", handleWhiteboardClear);
+
     return () => {
       socket.off("video-answer", handleVideoAnswer);
       socket.off("ice-candidate", handleIceCandidate);
+      socket.off("pair_code_update", handlePairCodeUpdate);
+      socket.off("whiteboard_draw_update", handleWhiteboardDraw);
+      socket.off("whiteboard_cleared", handleWhiteboardClear);
     };
   }, [socket]);
 
@@ -273,12 +327,84 @@ const GlobalCallManager = () => {
     }
   }, [incomingCall, activeCall, isCallAccepted]);
 
-  // Listen for the "Start Call" command from the UI
-  useEffect(() => {
-    const handleInitiateCall = () => startCall();
-    window.addEventListener("initiate-video-call", handleInitiateCall);
-    return () => window.removeEventListener("initiate-video-call", handleInitiateCall);
-  }, [selectedUser, socket, activeCall, loading, loggedInUser]);
+  const startDrawing = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    isDrawing.current = true;
+    lastPos.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  };
+
+  const draw = (e) => {
+    if (!isDrawing.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const currX = e.clientX - rect.left;
+    const currY = e.clientY - rect.top;
+    const prevX = lastPos.current.x;
+    const prevY = lastPos.current.y;
+
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(prevX, prevY);
+    ctx.lineTo(currX, currY);
+    ctx.strokeStyle = isEraser ? "#020617" : brushColor;
+    ctx.lineWidth = isEraser ? brushSize * 4 : brushSize;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.closePath();
+
+    lastPos.current = { x: currX, y: currY };
+
+    const targetId = callerInfo?.from || selectedUser?._id;
+    if (targetId && socket) {
+      socket.emit("whiteboard_draw", {
+        to: targetId,
+        drawData: { prevX, prevY, currX, currY, color: brushColor, size: brushSize, isEraser }
+      });
+    }
+  };
+
+  const stopDrawing = () => {
+    isDrawing.current = false;
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const targetId = callerInfo?.from || selectedUser?._id;
+    if (targetId && socket) {
+      socket.emit("whiteboard_clear", { to: targetId });
+    }
+  };
+
+  const handleCodeChange = (e) => {
+    const newCode = e.target.value;
+    setPairCode(newCode);
+    const targetId = callerInfo?.from || selectedUser?._id;
+    if (targetId && socket) {
+      socket.emit("pair_code_change", {
+        to: targetId,
+        code: newCode,
+        language: pairLanguage
+      });
+    }
+  };
+
+  const copyPairCode = () => {
+    navigator.clipboard.writeText(pairCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+    toast.success("Code copied to clipboard");
+  };
 
   return (
     <>
@@ -289,8 +415,8 @@ const GlobalCallManager = () => {
                 <VideoIcon className="h-6 w-6 animate-pulse" />
             </div>
             <div className="flex-1 flex flex-col">
-                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Incoming Intelligence Call</p>
-                <p className="text-sm font-bold text-slate-900">{callerInfo?.userDetails?.username || "Professional Partner"}</p>
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Incoming Synergy Session</p>
+                <p className="text-sm font-bold text-slate-900">{callerInfo?.userDetails?.username || "Colleague"}</p>
             </div>
           </div>
           <div className="flex gap-2 mt-4">
@@ -301,25 +427,215 @@ const GlobalCallManager = () => {
       )}
 
       <Dialog open={activeCall} onOpenChange={(val) => !val && endCall(true)}>
-        <DialogContent className="w-full max-w-2xl p-6 bg-slate-900 border-none text-white rounded-3xl overflow-hidden z-[9999]">
-          <DialogHeader className="hidden">
-            <DialogTitle>Active Video Session</DialogTitle>
-            <DialogDescription>Interactive video and audio communication interface.</DialogDescription>
+        <DialogContent className="w-[96vw] max-w-5xl h-[88vh] p-4 sm:p-6 bg-slate-950 border border-slate-800 text-white rounded-3xl overflow-hidden z-[9999] flex flex-col justify-between shadow-2xl">
+          <DialogHeader className="p-0 flex flex-row items-center justify-between border-b border-slate-800/80 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+              <DialogTitle className="text-sm font-black uppercase tracking-wider text-white">
+                Synergy Video Call • {selectedUser?.username || callerInfo?.userDetails?.username || "Collaborator"}
+              </DialogTitle>
+            </div>
+
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+              <button
+                onClick={() => setCallMode("video")}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  callMode === "video" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <VideoIcon className="h-3.5 w-3.5" /> Video Feed
+              </button>
+              <button
+                onClick={() => setCallMode("pair_code")}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  callMode === "pair_code" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Code className="h-3.5 w-3.5" /> Pair Code
+              </button>
+              <button
+                onClick={() => setCallMode("whiteboard")}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  callMode === "whiteboard" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Paintbrush className="h-3.5 w-3.5" /> Whiteboard
+              </button>
+            </div>
           </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-[300px] sm:h-[400px]">
-            <div className="relative rounded-2xl overflow-hidden bg-slate-800 border border-slate-700">
-                <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-                <span className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest">You</span>
-            </div>
-            <div className="relative rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 shadow-2xl shadow-indigo-500/10">
-                <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                <span className="absolute bottom-3 left-3 bg-indigo-600/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest">Partner</span>
-            </div>
+
+          {/* Workspace Body */}
+          <div className="flex-1 w-full my-3 overflow-hidden relative">
+            
+            {/* 1. Video Only Mode */}
+            {callMode === "video" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
+                <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                  <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                  <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white">
+                    You ({loggedInUser?.username})
+                  </span>
+                </div>
+                <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-lg">
+                  <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                  <span className="absolute bottom-3 left-3 bg-indigo-600/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white">
+                    Partner ({selectedUser?.username || "Collaborator"})
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 2. Pair Programming Mode */}
+            {callMode === "pair_code" && (
+              <div className="flex flex-col md:flex-row gap-4 h-full">
+                {/* Code Editor */}
+                <div className="flex-1 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col overflow-hidden">
+                  <div className="p-3 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={pairLanguage}
+                        onChange={(e) => setPairLanguage(e.target.value)}
+                        className="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1 text-xs outline-none"
+                      >
+                        <option value="javascript">JavaScript</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="python">Python</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="sql">SQL</option>
+                        <option value="go">Go</option>
+                      </select>
+                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span> Live Socket Sync
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={copyPairCode}
+                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                    >
+                      {copiedCode ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                      {copiedCode ? "Copied" : "Copy Code"}
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={pairCode}
+                    onChange={handleCodeChange}
+                    className="flex-1 w-full p-4 bg-slate-950 text-emerald-400 font-mono text-xs leading-relaxed outline-none resize-none border-none selection:bg-indigo-600 selection:text-white"
+                    placeholder="// Start typing code collaboratively..."
+                  />
+                </div>
+
+                {/* PiP Videos Side-panel */}
+                <div className="w-full md:w-56 flex md:flex-col gap-3">
+                  <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
+                    <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                    <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold">You</span>
+                  </div>
+                  <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
+                    <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    <span className="absolute bottom-2 left-2 bg-indigo-600/80 px-2 py-0.5 rounded text-[9px] font-bold">Partner</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Whiteboard Mode */}
+            {callMode === "whiteboard" && (
+              <div className="flex flex-col md:flex-row gap-4 h-full">
+                {/* Canvas Area */}
+                <div className="flex-1 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col overflow-hidden relative">
+                  {/* Canvas Toolbar */}
+                  <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Palette:</span>
+                      {["#6366f1", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4", "#ffffff"].map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => { setBrushColor(c); setIsEraser(false); }}
+                          style={{ backgroundColor: c }}
+                          className={`h-5 w-5 rounded-full border-2 transition-transform ${
+                            brushColor === c && !isEraser ? "scale-125 border-white shadow-lg" : "border-transparent"
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setIsEraser(!isEraser)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                          isEraser ? "bg-amber-500 text-slate-950 font-black" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        <Eraser className="h-3.5 w-3.5" /> Eraser
+                      </button>
+
+                      <button
+                        onClick={clearCanvas}
+                        className="px-3 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Clear Board
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* HTML5 Canvas */}
+                  <div className="flex-1 w-full h-full relative cursor-crosshair overflow-hidden">
+                    <canvas
+                      ref={canvasRef}
+                      width={800}
+                      height={500}
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      className="w-full h-full bg-slate-950"
+                    />
+                  </div>
+                </div>
+
+                {/* PiP Videos Side-panel */}
+                <div className="w-full md:w-56 flex md:flex-col gap-3">
+                  <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
+                    <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                    <span className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold">You</span>
+                  </div>
+                  <div className="relative flex-1 md:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
+                    <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    <span className="absolute bottom-2 left-2 bg-indigo-600/80 px-2 py-0.5 rounded text-[9px] font-bold">Partner</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="mt-8 flex justify-center gap-4">
-            <Button onClick={() => endCall(true)} className="h-14 w-14 bg-red-600 hover:bg-red-700 rounded-2xl shadow-xl shadow-red-200"><PhoneOff className="h-6 w-6" /></Button>
-            <Button onClick={() => dispatch(toggleMute())} className={`h-14 w-14 rounded-2xl transition-all ${isMuted ? 'bg-amber-100 text-amber-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>{isMuted ? <MicOff /> : <Mic />}</Button>
-            <Button onClick={() => dispatch(toggleCamera())} className={`h-14 w-14 rounded-2xl transition-all ${isCameraOff ? 'bg-amber-100 text-amber-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>{isCameraOff ? <CameraOff /> : <Camera />}</Button>
+
+          {/* Bottom Control Actions */}
+          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-center gap-4">
+            <Button
+              onClick={() => endCall(true)}
+              className="h-12 px-6 bg-red-600 hover:bg-red-700 rounded-2xl shadow-xl shadow-red-500/20 font-black text-xs uppercase tracking-wider gap-2"
+            >
+              <PhoneOff className="h-4 w-4" /> End Call
+            </Button>
+            <Button
+              onClick={() => dispatch(toggleMute())}
+              className={`h-12 w-12 rounded-2xl transition-all ${
+                isMuted ? 'bg-amber-500 text-slate-950 shadow-lg' : 'bg-slate-800 text-white hover:bg-slate-700'
+              }`}
+            >
+              {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
+            <Button
+              onClick={() => dispatch(toggleCamera())}
+              className={`h-12 w-12 rounded-2xl transition-all ${
+                isCameraOff ? 'bg-amber-500 text-slate-950 shadow-lg' : 'bg-slate-800 text-white hover:bg-slate-700'
+              }`}
+            >
+              {isCameraOff ? <CameraOff className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

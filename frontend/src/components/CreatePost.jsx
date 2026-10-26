@@ -11,7 +11,7 @@ import { readFileAsDataURL } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { 
   Loader2, Github, Globe, Tag, Users, DollarSign, 
-  ChevronDown, ChevronUp, ImagePlus, Sparkles 
+  ChevronDown, ChevronUp, ImagePlus, Sparkles, Code, FileCode 
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -27,13 +27,17 @@ const CreatePost = ({ open, setOpen }) => {
   const [loading, setLoading] = useState(false);
   const [showArtifacts, setShowArtifacts] = useState(false);
 
-  // Proof-of-work & Synergy state
+  // Proof-of-work, Code Inspector, & Synergy state
   const [githubUrl, setGithubUrl] = useState("");
   const [liveUrl, setLiveUrl] = useState("");
   const [tags, setTags] = useState("");
+  const [codeSnippet, setCodeSnippet] = useState("");
+  const [codeLanguage, setCodeLanguage] = useState("javascript");
   const [collaboratorUsername, setCollaboratorUsername] = useState("");
+  const [collaboratorRole, setCollaboratorRole] = useState("Co-Developer");
   const [isBounty, setIsBounty] = useState(false);
   const [bountyAmount, setBountyAmount] = useState("");
+  const [bountyType, setBountyType] = useState("service_offered");
 
   const { user } = useSelector(state => state.auth);
   const { posts } = useSelector(state => state.post);
@@ -62,9 +66,15 @@ const CreatePost = ({ open, setOpen }) => {
       if (githubUrl) formdata.append("githubUrl", githubUrl);
       if (liveUrl) formdata.append("liveUrl", liveUrl);
       if (tags) formdata.append("tags", tags);
-      if (collaboratorUsername) formdata.append("collaboratorUsername", collaboratorUsername);
+      if (codeSnippet) formdata.append("codeSnippet", codeSnippet);
+      if (codeLanguage) formdata.append("codeLanguage", codeLanguage);
+      if (collaboratorUsername) {
+        formdata.append("collaboratorUsername", collaboratorUsername);
+        formdata.append("collaboratorRole", collaboratorRole);
+      }
       if (isBounty) {
         formdata.append("isBounty", "true");
+        formdata.append("bountyType", bountyType);
         if (bountyAmount) formdata.append("bountyAmount", bountyAmount);
       }
 
@@ -85,9 +95,13 @@ const CreatePost = ({ open, setOpen }) => {
         setGithubUrl('');
         setLiveUrl('');
         setTags('');
+        setCodeSnippet('');
+        setCodeLanguage('javascript');
         setCollaboratorUsername('');
+        setCollaboratorRole('Co-Developer');
         setIsBounty(false);
         setBountyAmount('');
+        setBountyType('service_offered');
         setShowArtifacts(false);
         setOpen(false);
       }
@@ -212,40 +226,113 @@ const CreatePost = ({ open, setOpen }) => {
                 />
               </div>
 
-              {/* Collaborator Tag */}
-              <div className="flex items-center gap-2 bg-white rounded-lg px-2.5 py-1.5 border border-slate-200">
-                <Users className="h-4 w-4 text-slate-500 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Synergy Collaborator username (e.g. @siddhant)"
-                  value={collaboratorUsername}
-                  onChange={(e) => setCollaboratorUsername(e.target.value)}
-                  className="w-full bg-transparent outline-none text-xs text-slate-700"
+              {/* Code Snippet Inspector Input */}
+              <div className="space-y-1.5 bg-white rounded-xl p-2.5 border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                    <Code className="h-3.5 w-3.5 text-indigo-500" /> Code Snippet / Key Function
+                  </span>
+                  <select
+                    value={codeLanguage}
+                    onChange={(e) => setCodeLanguage(e.target.value)}
+                    className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 outline-none"
+                  >
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="python">Python</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="sql">SQL</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                    <option value="cpp">C++</option>
+                  </select>
+                </div>
+                <textarea
+                  placeholder="// Paste your core algorithmic milestone or key snippet here..."
+                  value={codeSnippet}
+                  onChange={(e) => setCodeSnippet(e.target.value)}
+                  rows={3}
+                  className="w-full bg-slate-900 text-emerald-400 font-mono text-[11px] p-2 rounded-lg outline-none resize-none"
                 />
               </div>
 
-              {/* Freelance / Bounty Toggle */}
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-semibold select-none">
+              {/* Collaborator Tag & Role */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 bg-white rounded-lg px-2.5 py-1.5 border border-slate-200">
+                  <Users className="h-4 w-4 text-slate-500 shrink-0" />
                   <input
-                    type="checkbox"
-                    checked={isBounty}
-                    onChange={(e) => setIsBounty(e.target.checked)}
-                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                    type="text"
+                    placeholder="Colleague @username"
+                    value={collaboratorUsername}
+                    onChange={(e) => setCollaboratorUsername(e.target.value)}
+                    className="w-full bg-transparent outline-none text-xs text-slate-700"
                   />
-                  <span>Mark as Deliverable / Paid Bounty</span>
-                </label>
-
-                {isBounty && (
-                  <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-1 border border-emerald-200 text-emerald-700">
-                    <DollarSign className="h-3.5 w-3.5" />
+                </div>
+                {collaboratorUsername && (
+                  <div className="flex items-center gap-2 bg-white rounded-lg px-2.5 py-1.5 border border-slate-200">
                     <input
                       type="text"
-                      placeholder="Amount (e.g. $300)"
-                      value={bountyAmount}
-                      onChange={(e) => setBountyAmount(e.target.value)}
-                      className="w-20 bg-transparent outline-none text-xs font-bold text-emerald-800"
+                      placeholder="Role (e.g. Co-Architect, UI/UX Lead)"
+                      value={collaboratorRole}
+                      onChange={(e) => setCollaboratorRole(e.target.value)}
+                      className="w-full bg-transparent outline-none text-xs text-slate-700"
                     />
+                  </div>
+                )}
+              </div>
+
+              {/* Freelance / Bounty Toggle */}
+              <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-semibold select-none text-xs">
+                    <input
+                      type="checkbox"
+                      checked={isBounty}
+                      onChange={(e) => setIsBounty(e.target.checked)}
+                      className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                    />
+                    <span>Mark as Micro-Gig / Paid Bounty</span>
+                  </label>
+
+                  {isBounty && (
+                    <div className="flex items-center gap-1 bg-white rounded-lg px-2.5 py-1 border border-emerald-300 text-emerald-700 shadow-sm">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      <input
+                        type="text"
+                        placeholder="Amount (e.g. $350)"
+                        value={bountyAmount}
+                        onChange={(e) => setBountyAmount(e.target.value)}
+                        className="w-24 bg-transparent outline-none text-xs font-black text-emerald-800"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {isBounty && (
+                  <div className="flex items-center gap-4 pl-6 text-[11px]">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-600">
+                      <input
+                        type="radio"
+                        name="bountyType"
+                        value="service_offered"
+                        checked={bountyType === "service_offered"}
+                        onChange={() => setBountyType("service_offered")}
+                        className="accent-indigo-600"
+                      />
+                      <span>Offering Service (Deliverable)</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-600">
+                      <input
+                        type="radio"
+                        name="bountyType"
+                        value="task_bounty"
+                        checked={bountyType === "task_bounty"}
+                        onChange={() => setBountyType("task_bounty")}
+                        className="accent-indigo-600"
+                      />
+                      <span>Seeking Solution (Reward)</span>
+                    </label>
                   </div>
                 )}
               </div>

@@ -6,6 +6,9 @@ import {
   PlusSquare,
   Search,
   Users,
+  Briefcase,
+  Sparkles,
+  Compass,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +24,7 @@ import { clearNotifications, markSynergyNotificationsSeen } from '@/redux/rtnSli
 import { clearMessages } from '@/redux/messageNotificationSlice';
 import SearchDialog from './SearchDialog';
 import SynergyRequests from './SynergyRequests';
+import JobFitModal from './JobFitModal';
 
 
 const LeftSidebar = () => {
@@ -30,6 +34,7 @@ const LeftSidebar = () => {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [synergyOpen, setSynergyOpen] = useState(false);
+  const [jobFitOpen, setJobFitOpen] = useState(false);
   const { likeNotification } = useSelector(state => state.realtimenotification)
 
   const { messages } = useSelector(state => state.messageNotification);
@@ -47,8 +52,9 @@ const LeftSidebar = () => {
   const sidebar = [
     { icon: <Home />, text: 'Home' },
     { icon: <Search />, text: 'Search' },
-    // { icon: <TrendingUp />, text: 'Explore' },
-
+    { icon: <Compass />, text: 'Zocial Scout', badge: 'SCOUT' },
+    { icon: <Briefcase />, text: 'Bounties' },
+    { icon: <Sparkles className="text-indigo-600" />, text: 'AI Job-Fit', badge: 'AI' },
     { icon: <Bell />, text: 'Notifications' },
     { icon: <Users />, text: 'Synergy' },
     { icon: <MessageCircle />, text: 'Messages' },
@@ -104,8 +110,16 @@ const LeftSidebar = () => {
       navigate("/")
     }
     else if (text === "Messages") {
-
       navigate("/chat");
+    }
+    else if (text === "Bounties") {
+      navigate("/bounties");
+    }
+    else if (text === "Zocial Scout") {
+      navigate("/scout");
+    }
+    else if (text === "AI Job-Fit") {
+      setJobFitOpen(true);
     }
 
   }
@@ -128,6 +142,12 @@ const LeftSidebar = () => {
                   <span className="text-xl transition-transform group-hover:scale-110">{item.icon}</span>
                   <span className="text-sm font-bold tracking-tight">{item.text}</span>
                   
+                  {item.badge && (
+                    <span className="ml-auto text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">
+                      {item.badge}
+                    </span>
+                  )}
+
                   {item.text === "Notifications" && unseenNotificationsCount > 0 && (
                     <span className="absolute left-7 top-2 bg-indigo-600 text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-lg z-10">
                       {unseenNotificationsCount}
