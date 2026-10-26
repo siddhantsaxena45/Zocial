@@ -12,10 +12,10 @@ const MainLayout = () => {
   const { engagementModalOpen, selectedPost } = useSelector(state => state.post);
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen print:block">
+    <div className="flex flex-col lg:flex-row min-h-screen w-full overflow-x-hidden print:block">
       <LeftSidebar />
-      <main className="flex-1 lg:ml-72 transition-all duration-300 min-h-screen print:m-0 print:p-0">
-        <div className="pt-20 lg:pt-6 pb-20 lg:pb-6 px-3 sm:px-4 lg:px-8 max-w-7xl mx-auto print:p-0 print:m-0 print:max-w-none">
+      <main className="flex-1 min-w-0 lg:ml-72 transition-all duration-300 min-h-screen w-full print:m-0 print:p-0">
+        <div className="pt-20 lg:pt-6 pb-20 lg:pb-6 px-3 sm:px-4 lg:px-8 max-w-7xl mx-auto w-full min-w-0 print:p-0 print:m-0 print:max-w-none">
           <Outlet />
         </div>
       </main>

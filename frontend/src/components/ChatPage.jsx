@@ -103,7 +103,7 @@ const ChatPage = () => {
           <h1 className="text-xs font-black uppercase tracking-[0.2em] text-slate-600">Intelligence Hub</h1>
         </div>
 
-        <div className="overflow-y-auto flex-1 h-full font-mono bg-slate-50/20">
+        <div className="overflow-y-auto flex-1 h-full bg-slate-50/30 divide-y divide-purple-50/40">
           {sortedUsers.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[300px] p-8 text-center text-slate-400">
                 <Search className="h-10 w-10 mb-4 opacity-20 text-indigo-400" />
@@ -117,6 +117,11 @@ const ChatPage = () => {
           ) : (
             sortedUsers.map((u) => {
               const isOnline = onlineUsers.includes(u._id.toString());
+              const cleanHandle = u.username 
+                ? (u.username.startsWith('@') ? u.username : `@${u.username.toLowerCase().replace(/\s+/g, '')}`) 
+                : '';
+              const displayName = u.name || u.username || 'Builder';
+
               return (
                 <div
                   key={u._id}
@@ -132,26 +137,35 @@ const ChatPage = () => {
 
                     dispatch({ type: "messageNotification/setAllMessages", payload: updatedMessages });
                   }}
-                  className={`flex items-center gap-4 px-4 py-3 mx-3 my-1.5 cursor-pointer transition-all rounded-2xl hover:bg-indigo-50/80 ${selectedUser?._id === u._id ? 'bg-indigo-100/80 shadow-sm ring-1 ring-indigo-200' : ''
-                    }`}
+                  className={`flex items-center gap-3.5 px-4 py-3 mx-2 my-1 cursor-pointer transition-all rounded-2xl hover:bg-purple-50/60 ${
+                    selectedUser?._id === u._id 
+                      ? 'bg-gradient-to-r from-purple-50 to-indigo-50/80 border border-indigo-200/70 shadow-sm' 
+                      : ''
+                  }`}
                 >
-                  <div className="relative">
-                    <Avatar className="h-10 w-10 shadow-sm">
+                  <div className="relative shrink-0">
+                    <Avatar className="h-10 w-10 shadow-sm border border-purple-100">
                       <AvatarImage src={u.profilepicture || "https://github.com/shadcn.png"} />
-                      <AvatarFallback>{u.username?.[0]}</AvatarFallback>
+                      <AvatarFallback className="bg-indigo-50 text-indigo-700 font-bold text-xs">
+                        {displayName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
-                    {isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>}
+                    {isOnline && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></div>
+                    )}
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-bold text-slate-900 truncate">{u.name || u.username}</span>
-                    <span className="text-[10px] font-medium text-slate-400 truncate">
-                      {u.username?.startsWith('@') ? u.username : `@${u.username}`}
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-sm font-bold text-slate-900 truncate tracking-tight">
+                      {displayName}
+                    </span>
+                    <span className="text-xs font-semibold text-indigo-600/80 truncate">
+                      {cleanHandle}
                     </span>
                   </div>
-                  <div className="ml-auto flex flex-col items-end gap-1">
+                  <div className="ml-auto flex flex-col items-end gap-1 shrink-0">
                     {unseenCounts[u._id] > 0 && (
-                      <span className="text-[8px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded-md shadow-sm">
-                        NEW
+                      <span className="text-[9px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded-full shadow-sm">
+                        {unseenCounts[u._id]}
                       </span>
                     )}
                   </div>
