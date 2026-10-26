@@ -148,7 +148,17 @@ const GlobalCallManager = () => {
       { urls: "stun:stun3.l.google.com:19302" },
       { urls: "stun:stun4.l.google.com:19302" },
       { urls: "stun:global.stun.twilio.com:3478" },
+      {
+        urls: [
+          "turn:openrelay.metered.ca:80",
+          "turn:openrelay.metered.ca:443",
+          "turn:openrelay.metered.ca:443?transport=tcp"
+        ],
+        username: "openrelayproject",
+        credential: "openrelayproject"
+      }
     ],
+    iceCandidatePoolSize: 10
   };
 
   const endCall = (shouldNotifyOther = true) => {
@@ -594,11 +604,33 @@ const GlobalCallManager = () => {
     });
   };
 
+  const updateCanvasDimensions = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas.parentElement) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const targetWidth = Math.round(rect.width * dpr);
+      const targetHeight = Math.round(rect.height * dpr);
+      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        redrawWhiteboard();
+      }
+    }
+  };
+
   useEffect(() => {
     if (callMode === "whiteboard") {
-      requestAnimationFrame(() => {
-        redrawWhiteboard();
-      });
+      updateCanvasDimensions();
+      const frame = requestAnimationFrame(updateCanvasDimensions);
+      const timer = setTimeout(updateCanvasDimensions, 200);
+      window.addEventListener("resize", updateCanvasDimensions);
+      return () => {
+        cancelAnimationFrame(frame);
+        clearTimeout(timer);
+        window.removeEventListener("resize", updateCanvasDimensions);
+      };
     }
   }, [callMode]);
 
@@ -655,22 +687,26 @@ const GlobalCallManager = () => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const isTouchEvent = e.touches && e.touches.length > 0;
-    const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
-    const clientY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
 
     const normX = Math.max(0, Math.min(1, (clientX - rect.left) / (rect.width || 1)));
     const normY = Math.max(0, Math.min(1, (clientY - rect.top) / (rect.height || 1)));
     return { x: normX, y: normY };
   };
 
-  const startDrawing = (e) => {
+  const handlePointerDown = (e) => {
+    e.preventDefault();
     isDrawing.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
     lastPos.current = getCanvasCoords(e);
   };
 
-  const draw = (e) => {
+  const handlePointerMove = (e) => {
     if (!isDrawing.current) return;
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const { x: currX, y: currY } = getCanvasCoords(e);
@@ -694,8 +730,12 @@ const GlobalCallManager = () => {
     }
   };
 
-  const stopDrawing = () => {
+  const handlePointerUp = (e) => {
+    e.preventDefault();
     isDrawing.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
   };
 
   const clearCanvas = () => {
