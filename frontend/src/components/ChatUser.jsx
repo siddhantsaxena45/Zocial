@@ -22,7 +22,7 @@ const ChatUser = ({ user, isOnline, onBack }) => {
 
   const { refetch } = useGetAllMessages(user._id);
 
-  const isMutualConnection = user.isMutual || (
+  const isMutualConnection = user.isMutual || synergyStatus === "accepted" || (
     (loggedInUser?.following || []).some(id => String(id?._id || id) === String(user._id)) &&
     (loggedInUser?.followers || []).some(id => String(id?._id || id) === String(user._id))
   );
