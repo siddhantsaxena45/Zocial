@@ -95,7 +95,7 @@ const ChatPage = () => {
 
 
   return (
-    <div className="flex h-[calc(100dvh-11rem)] lg:h-[calc(100dvh-6rem)] w-full overflow-hidden relative glass-card backdrop-blur-3xl bg-white/95 border border-purple-100/80 shadow-xl shadow-indigo-950/5 rounded-3xl">
+    <div className="flex h-[calc(100dvh-12.25rem)] sm:h-[calc(100dvh-11.5rem)] lg:h-[calc(100dvh-6rem)] w-full overflow-hidden relative glass-card backdrop-blur-3xl bg-white/95 border border-purple-100/80 shadow-xl shadow-indigo-950/5 rounded-2xl sm:rounded-3xl">
 
       {/* 👈 Left Sidebar (Contacts List) */}
       <div className={`${selectedUser ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-shrink-0 border-r border-purple-100/60 bg-white/60 backdrop-blur-3xl shadow-xs flex-col h-full`}>

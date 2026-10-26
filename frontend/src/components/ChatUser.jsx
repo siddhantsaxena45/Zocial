@@ -132,22 +132,26 @@ const ChatUser = ({ user, isOnline, onBack }) => {
     }
   };
 
-  const cleanHandle = user?.username 
-    ? (user.username.startsWith('@') ? user.username : `@${user.username.toLowerCase().replace(/\s+/g, '')}`)
+  const rawName = user?.name?.trim();
+  const rawUsername = user?.username?.trim();
+  const cleanHandle = rawUsername 
+    ? (rawUsername.startsWith('@') ? rawUsername : `@${rawUsername.toLowerCase().replace(/\s+/g, '')}`)
     : '';
-  const displayName = user?.name || user?.username || "Builder";
+  const displayName = rawName || cleanHandle || "Builder";
+  const showDistinctHandle = rawName && cleanHandle && rawName.toLowerCase() !== cleanHandle.toLowerCase().replace(/^@/, '');
 
   return (
     <div className="w-full h-full bg-slate-50/50 flex flex-col overflow-hidden">
 
       {/* Header */}
-      <div className="h-16 px-4 sm:px-6 bg-white/80 backdrop-blur-xl border-b border-purple-100/60 flex items-center justify-between shrink-0 z-10">
+      <div className="h-16 px-3 sm:px-6 bg-white/90 backdrop-blur-xl border-b border-purple-100/60 flex items-center justify-between shrink-0 z-10 shadow-xs">
 
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           {onBack && (
             <button
               onClick={onBack}
-              className="md:hidden p-1.5 -ml-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+              className="md:hidden p-2 -ml-1 text-slate-500 hover:text-indigo-600 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+              title="Back to contacts"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
@@ -162,12 +166,14 @@ const ChatUser = ({ user, isOnline, onBack }) => {
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="flex flex-col min-w-0">
-            <Link to={`/profile/${user?._id}`} className="cursor-pointer flex items-baseline gap-2 truncate">
+          <div className="flex flex-col min-w-0 justify-center">
+            <Link to={`/profile/${user?._id}`} className="cursor-pointer flex items-baseline gap-1.5 truncate">
               <span className="font-bold text-slate-900 text-sm sm:text-base truncate tracking-tight">{displayName}</span>
-              <span className="text-xs font-semibold text-indigo-600 truncate">
-                {cleanHandle}
-              </span>
+              {showDistinctHandle && (
+                <span className="text-xs font-semibold text-indigo-600 truncate">
+                  {cleanHandle}
+                </span>
+              )}
             </Link>
             <div className="flex items-center gap-2 mt-0.5">
               <span
