@@ -58,7 +58,7 @@ const LeftSidebar = () => {
   const sidebar = [
     { icon: <Home />, text: 'Home' },
     { icon: <Search />, text: 'Search' },
-    { icon: <Compass />, text: 'Zocial Scout' },
+    { icon: <Compass />, text: 'Scout' },
     { icon: <Bell />, text: 'Notifications' },
     { icon: <Users />, text: 'Synergy' },
     { icon: <MessageCircle />, text: 'Messages' },

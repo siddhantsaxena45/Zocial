@@ -102,8 +102,8 @@ const ZocialScout = () => {
     dispatch(setSelectedUser(candidate));
     
     const draft = candidate.matchScore
-      ? `Hi @${candidate.username}, I reviewed your proof-of-work on Zocial Scout. Your profile matched ${candidate.matchScore}% with our target requirements and we'd love to connect!`
-      : `Hi @${candidate.username}, I reviewed your verified transmissions on Zocial Scout and would love to collaborate!`;
+      ? `Hi @${candidate.username}, I reviewed your proof-of-work on Scout. Your profile matched ${candidate.matchScore}% with our target requirements and we'd love to connect!`
+      : `Hi @${candidate.username}, I reviewed your verified transmissions on Scout and would love to collaborate!`;
 
     localStorage.setItem("zocial_chat_draft", draft);
     navigate("/chat");

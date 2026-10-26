@@ -124,8 +124,8 @@ export const getProfile = async (req, res) => {
             return res.status(400).json({ message: "Invalid user ID", success: false });
         }
         let user = await User.findById(userId)
-            .populate({ 
-                path: "posts", 
+            .populate({
+                path: "posts",
                 sort: { createdAt: -1 },
                 populate: [
                     { path: 'author', select: 'username profilepicture' },
@@ -136,7 +136,7 @@ export const getProfile = async (req, res) => {
             .populate({ path: "bookmarks", sort: { createdAt: -1 } })
             .populate({ path: "followers", select: "username profilepicture bio" })
             .populate({ path: "following", select: "username profilepicture bio" });
-            
+
         // De-duplicate for data integrity
         const userObj = user.toObject();
         userObj.followers = [...new Set((userObj.followers || []).map(id => id._id ? id._id.toString() : id.toString()))];
@@ -153,14 +153,14 @@ export const getProfile = async (req, res) => {
 export const editProfile = async (req, res) => {
     try {
         const userId = req.id;
-        const { 
-            bio, 
-            gender, 
-            openToOpportunities, 
-            targetRole, 
-            hourlyRate, 
-            githubProfile, 
-            portfolioUrl 
+        const {
+            bio,
+            gender,
+            openToOpportunities,
+            targetRole,
+            hourlyRate,
+            githubProfile,
+            portfolioUrl
         } = req.body;
         const profilePicture = req.file;
 
@@ -215,14 +215,14 @@ export const getSuggestedUsers = async (req, res) => {
 
         // 🧠 Data Science Matchmaking: Sort by ML Skill overlap
         const mySkills = currentUser.skills || [];
-        
+
         suggestedUsers.sort((a, b) => {
             const aSkills = a.skills || [];
             const bSkills = b.skills || [];
-            
+
             const aOverlap = aSkills.filter(skill => mySkills.includes(skill)).length;
             const bOverlap = bSkills.filter(skill => mySkills.includes(skill)).length;
-            
+
             return bOverlap - aOverlap; // Descending order (highest overlap first)
         });
 
@@ -255,7 +255,7 @@ export const getFollowingUsers = async (req, res) => {
 export const getChatPartners = async (req, res) => {
     try {
         const userId = req.id;
-        
+
         // 1. Get current user's following list (as strings for easy comparison)
         const currentUser = await User.findById(userId).select('following');
         if (!currentUser) {
@@ -270,11 +270,11 @@ export const getChatPartners = async (req, res) => {
         // followkarnewala (A) follows jiskofollowkarrhe (B)
         // A.following push B
         // B.followers push A
-        
+
         // So User B is a MUTUAL connection for User A if:
         // 1. B is in A.following
         // 2. A is in B.following
-        
+
         const mutualConnections = await User.find({
             _id: { $in: followingIds },
             following: userId
@@ -285,10 +285,10 @@ export const getChatPartners = async (req, res) => {
         const partnerIdsFromConversations = conversations.flatMap(c => c.participants.filter(id => id.toString() !== userId));
 
         const mutualIds = new Set(mutualConnections.map(u => u._id.toString()));
-        
+
         // Find users from past conversations who aren't in mutualConnections
         const pastPartnerIds = [...new Set(partnerIdsFromConversations)].filter(id => !mutualIds.has(id.toString()));
-        
+
         const pastPartners = await User.find({
             _id: { $in: pastPartnerIds }
         }).select('_id username profilepicture bio followers');
@@ -336,18 +336,18 @@ export const followOrUnfollow = async (req, res) => {
                 Notification.deleteOne({ recipient: jiskofollowkarrhe, sender: followkarnewala, type: 'follow' })
             ])
 
-             // socket io for unfollow notification
-             const unfollower = await User.findById(followkarnewala).select('username profilepicture');
-             const notification = {
-                 type: 'unfollow',
-                 userId: followkarnewala,
-                 userDetails: unfollower,
-                 message: `${unfollower.username} unfollowed you`,
-             }
-             const targetSocketId = getReciverId(jiskofollowkarrhe);
-             if (targetSocketId) {
-                 io.to(targetSocketId).emit("notification", notification);
-             }
+            // socket io for unfollow notification
+            const unfollower = await User.findById(followkarnewala).select('username profilepicture');
+            const notification = {
+                type: 'unfollow',
+                userId: followkarnewala,
+                userDetails: unfollower,
+                message: `${unfollower.username} unfollowed you`,
+            }
+            const targetSocketId = getReciverId(jiskofollowkarrhe);
+            if (targetSocketId) {
+                io.to(targetSocketId).emit("notification", notification);
+            }
 
             return res.status(200).json({ message: "User unfollowed successfully", success: true });
         }
@@ -358,26 +358,26 @@ export const followOrUnfollow = async (req, res) => {
                 User.updateOne({ _id: jiskofollowkarrhe }, { $addToSet: { followers: followkarnewala } })
             ])
 
-             // create DB notification
-             const followerUser = await User.findById(followkarnewala).select('username profilepicture');
-             await Notification.create({
-                 recipient: jiskofollowkarrhe,
-                 sender: followkarnewala,
-                 type: 'follow',
-                 message: `${followerUser.username} followed you`
-             });
+            // create DB notification
+            const followerUser = await User.findById(followkarnewala).select('username profilepicture');
+            await Notification.create({
+                recipient: jiskofollowkarrhe,
+                sender: followkarnewala,
+                type: 'follow',
+                message: `${followerUser.username} followed you`
+            });
 
-             // socket io for follow notification
-             const notification = {
-                 type: 'follow',
-                 userId: followkarnewala,
-                 userDetails: followerUser,
-                 message: `${followerUser.username} followed you`,
-             }
-             const targetSocketId = getReciverId(jiskofollowkarrhe);
-             if (targetSocketId) {
-                 io.to(targetSocketId).emit("notification", notification);
-             }
+            // socket io for follow notification
+            const notification = {
+                type: 'follow',
+                userId: followkarnewala,
+                userDetails: followerUser,
+                message: `${followerUser.username} followed you`,
+            }
+            const targetSocketId = getReciverId(jiskofollowkarrhe);
+            if (targetSocketId) {
+                io.to(targetSocketId).emit("notification", notification);
+            }
 
             return res.status(200).json({ message: "User followed successfully", success: true });
         }
@@ -486,10 +486,10 @@ export const forgotPassword = async (req, res) => {
         // For this demo/portfolio, we'll return it in the response so the user can "recover" it.
         console.log(`[RECOVERY] Reset Token for ${email}: ${resetToken}`);
 
-        return res.status(200).json({ 
-            message: "Recovery token generated successfully. (Check server logs in real apps)", 
-            token: resetToken, 
-            success: true 
+        return res.status(200).json({
+            message: "Recovery token generated successfully. (Check server logs in real apps)",
+            token: resetToken,
+            success: true
         });
     } catch (error) {
         console.error("[Forgot Password Error]", error);
@@ -559,7 +559,7 @@ export const sendConnectionRequest = async (req, res) => {
 
         // Notify receiver
         const senderUser = await User.findById(sender).select('username profilepicture');
-        
+
         await Notification.create({
             recipient: receiver,
             sender,
@@ -628,8 +628,8 @@ export const acceptConnectionRequest = async (req, res) => {
             io.to(targetSocketId).emit("notification", notification);
         }
 
-        return res.status(200).json({ 
-            message: "Network synchronized successfully", 
+        return res.status(200).json({
+            message: "Network synchronized successfully",
             success: true,
             sender: senderUser,
             receiver: receiverUser
@@ -675,11 +675,11 @@ export const getPendingRequests = async (req, res) => {
             }).populate("receiver", "username profilepicture bio targetRole")
         ]);
 
-        return res.status(200).json({ 
-            requests: incoming, 
-            incoming, 
-            outgoing, 
-            success: true 
+        return res.status(200).json({
+            requests: incoming,
+            incoming,
+            outgoing,
+            success: true
         });
     } catch (error) {
         console.error(error);
@@ -768,7 +768,7 @@ export const removeSynergy = async (req, res) => {
                 ]
             })
         ]);
-        
+
         // Notify other user
         const targetSocketId = getReciverId(targetId);
         if (targetSocketId) {
@@ -806,7 +806,7 @@ export const getMe = async (req, res) => {
 
 /**
 /**
- * 🔍 Recruiter Search Portal ("Zocial Scout")
+ * 🔍 Recruiter Search Portal ("Scout")
  * Enables recruiters to search candidates using true AI Semantic Search
  * against candidate skills, bio, role, and visual proof-of-work transmissions.
  */
@@ -815,8 +815,8 @@ export const scoutCandidates = async (req, res) => {
         const { skills, role, openOnly, query, jd } = { ...req.query, ...req.body };
 
         const isSearching = Boolean(
-            (skills && skills.trim()) || 
-            (role && role.trim()) || 
+            (skills && skills.trim()) ||
+            (role && role.trim()) ||
             (query && query.trim()) ||
             (jd && jd.trim())
         );
@@ -972,8 +972,8 @@ Return strict valid JSON with an array named "results":
                 ].join(" ").toLowerCase();
 
                 const hits = queryTokens.filter(t => candidateText.includes(t));
-                matchScore = queryTokens.length > 0 
-                    ? Math.min(95, Math.max(20, Math.round((hits.length / queryTokens.length) * 100))) 
+                matchScore = queryTokens.length > 0
+                    ? Math.min(95, Math.max(20, Math.round((hits.length / queryTokens.length) * 100)))
                     : 60;
                 matchedSkills = hits.slice(0, 4);
                 semanticReason = hits.length > 0 ? `Demonstrated capabilities in ${hits.slice(0, 3).join(", ")}` : "Verified network builder";
@@ -1010,7 +1010,7 @@ Return strict valid JSON with an array named "results":
             candidates: relevantCandidates
         });
     } catch (error) {
-        console.error("[Zocial Scout Error]", error);
+        console.error("[ Error]", error);
         return res.status(500).json({ message: "Server error querying candidates", success: false });
     }
 };
@@ -1047,8 +1047,8 @@ export const searchUsers = async (req, res) => {
                 { skills: regex }
             ]
         })
-        .select("username profilepicture bio targetRole skills")
-        .limit(10);
+            .select("username profilepicture bio targetRole skills")
+            .limit(10);
 
         return res.status(200).json({
             success: true,
