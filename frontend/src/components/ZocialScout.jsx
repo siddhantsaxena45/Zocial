@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { 
-  Search, Filter, Sparkles, Briefcase, Github, 
-  Globe, ShieldCheck, ExternalLink, MessageSquare, 
-  Users, FileText, Code, Target, RefreshCw, X, CheckCircle2 
+  Search, Filter, Sparkles, Briefcase, MessageSquare, 
+  Users, FileText, Target, X 
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
