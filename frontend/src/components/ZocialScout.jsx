@@ -107,10 +107,6 @@ const ZocialScout = () => {
           <div className="absolute bottom-0 left-1/3 -mb-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="relative z-10 max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-black uppercase tracking-wider backdrop-blur-md">
-              <Target className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
-              Scout • AI Job-Fit ATS Recruiter Suite
-            </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
               Paste JD & Rank Builders by <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-300 bg-clip-text text-transparent">Top ATS Score</span>
             </h1>
