@@ -149,19 +149,6 @@ const EditProfile = () => {
                                     </p>
                                 </div>
 
-                                <div className="w-full pt-4 border-t border-slate-100/50 text-left">
-                                    <div className="flex items-center gap-1.5 text-indigo-600 mb-1">
-                                        <Sparkles className="h-3 w-3" />
-                                        <span className="text-[9px] font-black uppercase tracking-wider">AI Headline</span>
-                                    </div>
-                                    <p className="text-xs text-slate-800 font-bold leading-snug">
-                                        {aiHeadline || "Generated automatically from project transmissions"}
-                                    </p>
-                                    <p className="text-[11px] text-slate-500 italic leading-relaxed mt-2 line-clamp-4">
-                                        "{aiSummary}"
-                                    </p>
-                                </div>
-
                                 <input type="file" onChange={fileHandler} className="hidden" ref={imageRef} />
                             </div>
                         </div>
@@ -205,80 +192,6 @@ const EditProfile = () => {
                                             setInputData({ ...inputData, username: val });
                                         }}
                                         className="w-full bg-slate-50/50 border border-slate-200/60 rounded-xl px-4 py-2.5 text-sm font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* AI Autonomous Portfolio Status */}
-                        <div className="glass-card p-6 border border-purple-100 bg-gradient-to-br from-purple-50/60 via-indigo-50/40 to-white shadow-xl space-y-4">
-                            <div className="flex items-center justify-between border-b border-purple-100 pb-3 flex-wrap gap-2">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-md">
-                                        <Sparkles className="h-4 w-4" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Autonomous AI Portfolio</h3>
-                                        <p className="text-[10px] text-purple-600 font-bold uppercase tracking-widest">Synthesized from your transmissions</p>
-                                    </div>
-                                </div>
-                                <Link to={`/resume/${user?._id}`}>
-                                    <Button size="sm" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl shadow-sm flex items-center gap-1.5 h-8">
-                                        <FileText className="h-3.5 w-3.5" /> View AI Resume <ArrowRight className="h-3 w-3" />
-                                    </Button>
-                                </Link>
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Current AI Headline:</span>
-                                    <span className="text-xs font-bold text-slate-900">{aiHeadline}</span>
-                                </div>
-                                <p className="text-xs text-slate-600 leading-relaxed italic bg-white/70 p-3 rounded-xl border border-purple-100/60">
-                                    "{aiSummary}"
-                                </p>
-                                <p className="text-[10px] text-slate-400 flex items-center gap-1 pt-1">
-                                    <Sparkles className="h-3 w-3 text-purple-400" />
-                                    No manual summary required. Every time you post technical proof-of-work, code snippets, or UI designs, Gemini AI automatically updates your skills, career headline, and resume.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Professional Portals & Repositories */}
-                        <div className="glass-card p-8 border border-white/60 shadow-xl space-y-6">
-                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                    <Globe className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-wider">Professional Portals</h3>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">External Links & Code Repositories</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
-                                        <Github className="h-3.5 w-3.5 text-slate-600" /> GitHub Profile
-                                    </label>
-                                    <input
-                                        type="url"
-                                        placeholder="https://github.com/username"
-                                        value={inputData.githubProfile}
-                                        onChange={(e) => setInputData({ ...inputData, githubProfile: e.target.value })}
-                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
-                                        <Globe className="h-3.5 w-3.5 text-slate-600" /> Portfolio Website
-                                    </label>
-                                    <input
-                                        type="url"
-                                        placeholder="https://yourportfolio.dev"
-                                        value={inputData.portfolioUrl}
-                                        onChange={(e) => setInputData({ ...inputData, portfolioUrl: e.target.value })}
-                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
                                     />
                                 </div>
                             </div>

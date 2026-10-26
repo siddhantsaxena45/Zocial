@@ -5,7 +5,7 @@ import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { setAuthUser, updateUserProfile } from '@/redux/authSlice';
-import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark, Briefcase, DollarSign, Github, Globe, FileText, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, LayoutDashboard, Zap, Award, BookMarked, Bookmark, Briefcase, DollarSign, Github, Globe, FileText } from "lucide-react";
 import { toast } from 'sonner';
 import axios from "axios";
 import NetworkListDialog from './NetworkListDialog';
@@ -341,14 +341,8 @@ const Profile = () => {
                                     </p>
                                 )}
 
-                                {((userProfile?.resume_data?.skills || userProfile?.skills || []).length > 0 || userProfile?.githubProfile || userProfile?.portfolioUrl) && (
+                                {(userProfile?.githubProfile || userProfile?.portfolioUrl) && (
                                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
-                                        {(userProfile?.resume_data?.skills || userProfile?.skills || []).slice(0, 8).map((skill, idx) => (
-                                            <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50/80 border border-indigo-100 text-indigo-700 text-xs font-semibold">
-                                                <Sparkles className="h-3 w-3 text-indigo-400" />
-                                                {skill}
-                                            </span>
-                                        ))}
                                         {userProfile?.githubProfile && (
                                             <a
                                                 href={userProfile.githubProfile.startsWith('http') ? userProfile.githubProfile : `https://${userProfile.githubProfile}`}
