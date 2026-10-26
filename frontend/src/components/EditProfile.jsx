@@ -2,19 +2,17 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
 import { readFileAsDataURL } from "@/lib/utils";
 import {
     Select,
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Camera, User, FileText, ChevronRight, Sparkles, Github, Globe, Briefcase, DollarSign, CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Loader2, Camera, User, ChevronRight, Sparkles, Github, Globe, FileText, ArrowRight } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { setAuthUser } from '@/redux/authSlice';
 import axios from 'axios';
@@ -30,11 +28,7 @@ const EditProfile = () => {
         name: user?.name || "",
         username: user?.username || "",
         profilephoto: user?.profilepicture || "",
-        bio: user?.bio || "",
         gender: user?.gender || "",
-        openToOpportunities: user?.openToOpportunities || false,
-        targetRole: user?.targetRole || "",
-        hourlyRate: user?.hourlyRate || "",
         githubProfile: user?.githubProfile || "",
         portfolioUrl: user?.portfolioUrl || ""
     });
@@ -47,12 +41,8 @@ const EditProfile = () => {
             setInputData({
                 name: user.name || "",
                 username: user.username || "",
-                profilephoto: user.profilepicture,
-                bio: user.bio || "",
+                profilephoto: user.profilepicture || "",
                 gender: user.gender || "",
-                openToOpportunities: user.openToOpportunities || false,
-                targetRole: user.targetRole || "",
-                hourlyRate: user.hourlyRate || "",
                 githubProfile: user.githubProfile || "",
                 portfolioUrl: user.portfolioUrl || ""
             });
@@ -74,7 +64,7 @@ const EditProfile = () => {
 
     const selectChangeHandler = (value) => {
         setInputData({ ...inputData, gender: value });
-    }
+    };
 
     const editProfileHandler = async (e) => {
         const formData = new FormData();
@@ -83,11 +73,7 @@ const EditProfile = () => {
         }
         formData.append("name", inputData.name);
         formData.append("username", inputData.username);
-        formData.append("bio", inputData.bio);
         formData.append("gender", inputData.gender);
-        formData.append("openToOpportunities", inputData.openToOpportunities ? "true" : "false");
-        formData.append("targetRole", inputData.targetRole);
-        formData.append("hourlyRate", inputData.hourlyRate);
         formData.append("githubProfile", inputData.githubProfile);
         formData.append("portfolioUrl", inputData.portfolioUrl);
 
@@ -103,11 +89,7 @@ const EditProfile = () => {
                     name: response.data.user.name,
                     username: response.data.user.username,
                     profilepicture: response.data.user.profilepicture,
-                    bio: response.data.user.bio,
                     gender: response.data.user.gender,
-                    openToOpportunities: response.data.user.openToOpportunities,
-                    targetRole: response.data.user.targetRole,
-                    hourlyRate: response.data.user.hourlyRate,
                     githubProfile: response.data.user.githubProfile,
                     portfolioUrl: response.data.user.portfolioUrl
                 };
@@ -122,6 +104,9 @@ const EditProfile = () => {
         }
     };
 
+    const aiHeadline = user?.resume_data?.headline || user?.targetRole || "Verified Technical Builder";
+    const aiSummary = user?.resume_data?.ai_summary || user?.ai_summary || "Gemini AI analyzes your project transmissions to automatically synthesize your career headline and resume.";
+
     return (
         <div className="min-h-screen w-full pt-24 pb-16 px-4 md:px-10 bg-slate-50/50">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -133,7 +118,7 @@ const EditProfile = () => {
                         <span className="text-[10px] font-black uppercase tracking-[0.2em]">Identity Management</span>
                     </div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">Refine Your Professional Presence</h1>
-                    <p className="text-slate-500 text-sm font-medium">Update your digital identity and AI-facing metadata.</p>
+                    <p className="text-slate-500 text-sm font-medium">Your resume, career summary, and skill stack are synthesized automatically from your project transmissions.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -151,7 +136,7 @@ const EditProfile = () => {
                                     </Avatar>
                                     <button 
                                         onClick={() => imageRef.current.click()}
-                                        className="absolute bottom-0 right-0 bg-indigo-600 text-white p-2 rounded-xl shadow-lg border-2 border-white hover:bg-indigo-700 transition-all hover:scale-110 active:scale-95"
+                                        className="absolute bottom-0 right-0 bg-indigo-600 text-white p-2 rounded-xl shadow-lg border-2 border-white hover:bg-indigo-700 transition-all hover:scale-110 active:scale-95 cursor-pointer"
                                     >
                                         <Camera className="h-4 w-4" />
                                     </button>
@@ -164,9 +149,16 @@ const EditProfile = () => {
                                     </p>
                                 </div>
 
-                                <div className="w-full pt-4 border-t border-slate-100/50">
-                                    <p className="text-xs text-slate-500 italic leading-relaxed px-2">
-                                        "{inputData.bio || "Crafting a unique professional narrative..."}"
+                                <div className="w-full pt-4 border-t border-slate-100/50 text-left">
+                                    <div className="flex items-center gap-1.5 text-indigo-600 mb-1">
+                                        <Sparkles className="h-3 w-3" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider">AI Headline</span>
+                                    </div>
+                                    <p className="text-xs text-slate-800 font-bold leading-snug">
+                                        {aiHeadline}
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 italic leading-relaxed mt-2 line-clamp-4">
+                                        "{aiSummary}"
                                     </p>
                                 </div>
 
@@ -217,30 +209,78 @@ const EditProfile = () => {
                                 </div>
                             </div>
                         </div>
-                        
-                        {/* Bio Section */}
+
+                        {/* AI Autonomous Portfolio Status */}
+                        <div className="glass-card p-6 border border-purple-100 bg-gradient-to-br from-purple-50/60 via-indigo-50/40 to-white shadow-xl space-y-4">
+                            <div className="flex items-center justify-between border-b border-purple-100 pb-3 flex-wrap gap-2">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-md">
+                                        <Sparkles className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Autonomous AI Portfolio</h3>
+                                        <p className="text-[10px] text-purple-600 font-bold uppercase tracking-widest">Synthesized from your transmissions</p>
+                                    </div>
+                                </div>
+                                <Link to={`/resume/${user?._id}`}>
+                                    <Button size="sm" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl shadow-sm flex items-center gap-1.5 h-8">
+                                        <FileText className="h-3.5 w-3.5" /> View AI Resume <ArrowRight className="h-3 w-3" />
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Current AI Headline:</span>
+                                    <span className="text-xs font-bold text-slate-900">{aiHeadline}</span>
+                                </div>
+                                <p className="text-xs text-slate-600 leading-relaxed italic bg-white/70 p-3 rounded-xl border border-purple-100/60">
+                                    "{aiSummary}"
+                                </p>
+                                <p className="text-[10px] text-slate-400 flex items-center gap-1 pt-1">
+                                    <Sparkles className="h-3 w-3 text-purple-400" />
+                                    No manual summary required. Every time you post technical proof-of-work, code snippets, or UI designs, Gemini AI automatically updates your skills, career headline, and resume.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Professional Portals & Repositories */}
                         <div className="glass-card p-8 border border-white/60 shadow-xl space-y-6">
                             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
                                 <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                    <FileText className="h-5 w-5" />
+                                    <Globe className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-wider">Professional Summary</h3>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Global Bio & Intent</p>
+                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-wider">Professional Portals</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">External Links & Code Repositories</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <Textarea
-                                    placeholder="Briefly describe your expertise, stack, and professional goals..."
-                                    value={inputData.bio}
-                                    onChange={(e) => setInputData({ ...inputData, bio: e.target.value })}
-                                    className="min-h-[160px] bg-slate-50/50 border-slate-200/60 focus-visible:ring-indigo-500 text-slate-700 text-sm p-4 rounded-xl resize-none shadow-inner"
-                                />
-                                <p className="text-[10px] text-slate-400 font-medium px-1 flex items-center gap-1">
-                                    <Sparkles className="h-3 w-3 text-indigo-400" />
-                                    Tip: Mentioning specific skills helps our Gemini AI engine generate your tailored resume.
-                                </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+                                        <Github className="h-3.5 w-3.5 text-slate-600" /> GitHub Profile
+                                    </label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://github.com/username"
+                                        value={inputData.githubProfile}
+                                        onChange={(e) => setInputData({ ...inputData, githubProfile: e.target.value })}
+                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+                                        <Globe className="h-3.5 w-3.5 text-slate-600" /> Portfolio Website
+                                    </label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://yourportfolio.dev"
+                                        value={inputData.portfolioUrl}
+                                        onChange={(e) => setInputData({ ...inputData, portfolioUrl: e.target.value })}
+                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -273,82 +313,12 @@ const EditProfile = () => {
                             </div>
                         </div>
 
-                        {/* Builder & Opportunity Metadata */}
-                        <div className="glass-card p-8 border border-white/60 shadow-xl space-y-6">
-                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                                <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                                    <Briefcase className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-wider">Synergy & Opportunities</h3>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Builder Status & Professional Radar</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                                        Target Role / Specialization
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. Senior Full-Stack Engineer"
-                                        value={inputData.targetRole}
-                                        onChange={(e) => setInputData({ ...inputData, targetRole: e.target.value })}
-                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                                        Contract / Hourly Rate
-                                    </label>
-                                    <div className="relative">
-                                        <DollarSign className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. $85/hr or $6,000/mo"
-                                            value={inputData.hourlyRate}
-                                            onChange={(e) => setInputData({ ...inputData, hourlyRate: e.target.value })}
-                                            className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 pl-9 pr-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
-                                        <Github className="h-3.5 w-3.5 text-slate-600" /> GitHub Profile
-                                    </label>
-                                    <input
-                                        type="url"
-                                        placeholder="https://github.com/username"
-                                        value={inputData.githubProfile}
-                                        onChange={(e) => setInputData({ ...inputData, githubProfile: e.target.value })}
-                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
-                                        <Globe className="h-3.5 w-3.5 text-slate-600" /> Portfolio Website
-                                    </label>
-                                    <input
-                                        type="url"
-                                        placeholder="https://yourportfolio.dev"
-                                        value={inputData.portfolioUrl}
-                                        onChange={(e) => setInputData({ ...inputData, portfolioUrl: e.target.value })}
-                                        className="w-full bg-slate-50/50 border border-slate-200/60 focus:ring-2 focus:ring-indigo-500 h-11 px-4 text-xs font-medium text-slate-800 rounded-xl shadow-sm outline-none"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Action Bar */}
                         <div className="flex items-center justify-end pt-4">
                             <Button 
                                 onClick={() => navigate(-1)}
                                 variant="ghost"
-                                className="mr-4 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-slate-900"
+                                className="mr-4 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-slate-900 cursor-pointer"
                             >
                                 Discard Changes
                             </Button>
@@ -356,7 +326,7 @@ const EditProfile = () => {
                             <Button 
                                 onClick={editProfileHandler} 
                                 disabled={loading}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 rounded-2xl transition-all shadow-xl shadow-indigo-200 group active:scale-95 disabled:opacity-70"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 rounded-2xl transition-all shadow-xl shadow-indigo-200 group active:scale-95 disabled:opacity-70 cursor-pointer"
                             >
                                 {loading ? (
                                     <>

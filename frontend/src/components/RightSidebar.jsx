@@ -33,7 +33,7 @@ const RightSidebar = () => {
             {user?.username?.startsWith('@') ? user?.username : `@${user?.username}`}
           </span>
           <span className="text-[10px] text-slate-500 font-medium uppercase tracking-widest truncate max-w-[150px] mt-0.5">
-            {user?.bio || "Professional Hub"}
+            {user?.resume_data?.headline || user?.targetRole || "Builder Hub"}
           </span>
         </div>
       </div>

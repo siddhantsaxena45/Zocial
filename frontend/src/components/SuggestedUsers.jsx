@@ -37,7 +37,7 @@ const SuggestedUsers = () => {
                                         {user?.username?.startsWith('@') ? user?.username : `@${user?.username}`}
                                     </span>
                                     <span className="text-[10px] text-slate-500 font-medium truncate w-full italic">
-                                        {user?.bio || "Professional Hub"}
+                                        {user?.resume_data?.headline || user?.targetRole || "Verified Builder"}
                                     </span>
                                 </div>
                             </div>
