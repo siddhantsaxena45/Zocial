@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { 
-  Search, Filter, Sparkles, Briefcase, DollarSign, Github, 
-  Globe, ShieldCheck, ArrowRight, ExternalLink, MessageSquare, 
-  CheckCircle2, Users, FileText, Code 
+import {
+  Search, Filter, Sparkles, Briefcase, DollarSign, Github,
+  Globe, ShieldCheck, ArrowRight, ExternalLink, MessageSquare,
+  CheckCircle2, Users, FileText, Code
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -70,7 +70,7 @@ const ZocialScout = () => {
     localStorage.setItem("zocial_chat_target", JSON.stringify(candidate));
     dispatch(setSelectedUser(candidate));
     localStorage.setItem(
-      "zocial_chat_draft", 
+      "zocial_chat_draft",
       `Hi @${candidate.username}, I reviewed your proof-of-work on Zocial Scout. We're looking for a ${candidate.targetRole || "developer"} and would love to connect!`
     );
     navigate("/chat");
@@ -85,7 +85,7 @@ const ZocialScout = () => {
   return (
     <div className="w-full py-4 md:py-8 bg-transparent">
       <div className="max-w-6xl mx-auto space-y-8">
-        
+
         {/* Recruiter Portal Hero */}
         <div className="relative rounded-3xl bg-gradient-to-br from-purple-950 via-slate-950 to-indigo-950 text-white p-8 md:p-12 overflow-hidden shadow-2xl border border-purple-500/20">
           <div className="absolute -right-20 -top-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -293,11 +293,10 @@ const ZocialScout = () => {
                       {candidate.skills.slice(0, 6).map((skill, idx) => (
                         <span
                           key={idx}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                            candidate.matchedSkills?.some(m => m.toLowerCase() === skill.toLowerCase())
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${candidate.matchedSkills?.some(m => m.toLowerCase() === skill.toLowerCase())
                               ? "bg-indigo-600 text-white border-indigo-600"
                               : "bg-slate-100 text-slate-700 border-slate-200"
-                          }`}
+                            }`}
                         >
                           {skill}
                         </span>

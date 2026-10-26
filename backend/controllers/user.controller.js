@@ -664,12 +664,23 @@ export const rejectConnectionRequest = async (req, res) => {
 
 export const getPendingRequests = async (req, res) => {
     try {
-        const requests = await ConnectionRequest.find({
-            receiver: req.id,
-            status: "pending"
-        }).populate("sender", "username profilepicture bio");
+        const [incoming, outgoing] = await Promise.all([
+            ConnectionRequest.find({
+                receiver: req.id,
+                status: "pending"
+            }).populate("sender", "username profilepicture bio targetRole"),
+            ConnectionRequest.find({
+                sender: req.id,
+                status: "pending"
+            }).populate("receiver", "username profilepicture bio targetRole")
+        ]);
 
-        return res.status(200).json({ requests, success: true });
+        return res.status(200).json({ 
+            requests: incoming, 
+            incoming, 
+            outgoing, 
+            success: true 
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Server error", success: false });
@@ -697,17 +708,23 @@ export const getConnectionStatus = async (req, res) => {
 export const withdrawConnectionRequest = async (req, res) => {
     try {
         const sender = req.id;
-        const receiver = req.params.id;
+        const targetId = req.params.id;
 
-        const request = await ConnectionRequest.findOne({
-            sender,
-            receiver,
-            status: "pending"
-        });
+        let request = null;
+        if (mongoose.Types.ObjectId.isValid(targetId)) {
+            request = await ConnectionRequest.findOne({
+                $or: [
+                    { _id: targetId, sender, status: "pending" },
+                    { sender, receiver: targetId, status: "pending" }
+                ]
+            });
+        }
 
         if (!request) {
             return res.status(404).json({ message: "No pending synergy request found to withdraw", success: false });
         }
+
+        const receiver = request.receiver;
 
         await Promise.all([
             ConnectionRequest.deleteOne({ _id: request._id }),
@@ -715,7 +732,7 @@ export const withdrawConnectionRequest = async (req, res) => {
         ]);
 
         // Socket notification for withdrawal
-        const receiverSocketId = getReciverId(receiver);
+        const receiverSocketId = getReciverId(receiver.toString());
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("notification", {
                 type: 'connectionWithdrawn',
