@@ -119,8 +119,8 @@ const ChatPage = () => {
               const isOnline = onlineUsers.includes(u._id.toString());
               const cleanHandle = u.username 
                 ? (u.username.startsWith('@') ? u.username : `@${u.username.toLowerCase().replace(/\s+/g, '')}`) 
-                : '';
-              const displayName = u.name || u.username || 'Builder';
+                : '@builder';
+              const initialLetter = cleanHandle.replace(/^@/, '')[0]?.toUpperCase() || 'U';
 
               return (
                 <div
@@ -147,18 +147,15 @@ const ChatPage = () => {
                     <Avatar className="h-10 w-10 shadow-sm border border-purple-100">
                       <AvatarImage src={u.profilepicture || "https://github.com/shadcn.png"} />
                       <AvatarFallback className="bg-indigo-50 text-indigo-700 font-bold text-xs">
-                        {displayName.charAt(0).toUpperCase()}
+                        {initialLetter}
                       </AvatarFallback>
                     </Avatar>
                     {isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></div>
                     )}
                   </div>
-                  <div className="flex flex-col min-w-0 flex-1">
+                  <div className="flex flex-col min-w-0 flex-1 justify-center">
                     <span className="text-sm font-bold text-slate-900 truncate tracking-tight">
-                      {displayName}
-                    </span>
-                    <span className="text-xs font-semibold text-indigo-600/80 truncate">
                       {cleanHandle}
                     </span>
                   </div>

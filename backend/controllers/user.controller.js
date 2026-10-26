@@ -325,8 +325,17 @@ export const getSuggestedUsers = async (req, res) => {
             return bOverlap - aOverlap; // Descending order (highest overlap first)
         });
 
-        // Return the top 50 matches for the global search cache
-        return res.status(200).json({ users: suggestedUsers.slice(0, 50), success: true });
+        // Return the top 50 matches for the global search cache with normalized @handles
+        const formattedUsers = suggestedUsers.slice(0, 50).map(u => {
+            const obj = typeof u.toObject === 'function' ? u.toObject() : { ...u };
+            let raw = (obj.username || "").trim();
+            if (raw) {
+                obj.username = raw.startsWith("@") ? raw : `@${raw.toLowerCase().replace(/\s+/g, "")}`;
+            }
+            return obj;
+        });
+
+        return res.status(200).json({ users: formattedUsers, success: true });
     }
     catch (error) {
         console.log(error);
@@ -392,9 +401,18 @@ export const getChatPartners = async (req, res) => {
             _id: { $in: pastPartnerIds }
         }).select('_id username profilepicture bio followers');
 
+        const formatHandle = (u) => {
+            const obj = typeof u.toObject === 'function' ? u.toObject() : { ...u };
+            let raw = (obj.username || "").trim();
+            if (raw) {
+                obj.username = raw.startsWith("@") ? raw : `@${raw.toLowerCase().replace(/\s+/g, "")}`;
+            }
+            return obj;
+        };
+
         const partners = [
-            ...mutualConnections.map(u => ({ ...u.toObject(), isMutual: true })),
-            ...pastPartners.map(u => ({ ...u.toObject(), isMutual: false }))
+            ...mutualConnections.map(u => ({ ...formatHandle(u), isMutual: true })),
+            ...pastPartners.map(u => ({ ...formatHandle(u), isMutual: false }))
         ];
 
         return res.status(200).json({ users: partners, success: true });

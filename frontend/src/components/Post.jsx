@@ -26,7 +26,16 @@ import { Badge } from './ui/badge';
 import { updateBookmarks } from '@/redux/authSlice';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+const formatHandle = (raw) => {
+    if (!raw) return "@builder";
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("@")) return trimmed;
+    return `@${trimmed.toLowerCase().replace(/\s+/g, '')}`;
+};
+
 const Post = ({ post }) => {
+    const authorHandle = formatHandle(post.author?.username);
+    const authorInitial = authorHandle.replace(/^@/, '')[0]?.toUpperCase() || 'U';
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const { user } = useSelector(state => state.auth)
@@ -237,14 +246,14 @@ const handleShare = async (imageUrl) => {
                         <Avatar className="h-10 w-10 border border-slate-200">
                             <AvatarImage src={post.author?.profilepicture || "https://github.com/shadcn.png"} alt="profile_image" />
                             <AvatarFallback>
-                                {post.author?.username?.charAt(0).toUpperCase()}
+                                {authorInitial}
                             </AvatarFallback>
                         </Avatar>
                     </Link>
                     <div className='flex flex-col justify-center'>
                         <div className='flex flex-wrap items-center gap-2'>
                             <Link to={`/profile/${post.author?._id}`} className="text-base font-black text-slate-900 tracking-tight hover:text-indigo-600 transition-colors">
-                                {post.author?.username}
+                                {authorHandle}
                             </Link>
                         </div>
                     </div>

@@ -132,13 +132,11 @@ const ChatUser = ({ user, isOnline, onBack }) => {
     }
   };
 
-  const rawName = user?.name?.trim();
   const rawUsername = user?.username?.trim();
   const cleanHandle = rawUsername 
     ? (rawUsername.startsWith('@') ? rawUsername : `@${rawUsername.toLowerCase().replace(/\s+/g, '')}`)
-    : '';
-  const displayName = rawName || cleanHandle || "Builder";
-  const showDistinctHandle = rawName && cleanHandle && rawName.toLowerCase() !== cleanHandle.toLowerCase().replace(/^@/, '');
+    : '@builder';
+  const initialLetter = cleanHandle.replace(/^@/, '')[0]?.toUpperCase() || 'U';
 
   return (
     <div className="w-full h-full bg-slate-50/50 flex flex-col overflow-hidden">
@@ -162,18 +160,13 @@ const ChatUser = ({ user, isOnline, onBack }) => {
                 src={user?.profilepicture || "https://github.com/shadcn.png"}
               />
               <AvatarFallback className="bg-indigo-50 text-indigo-700 font-bold text-xs">
-                {displayName.charAt(0).toUpperCase()}
+                {initialLetter}
               </AvatarFallback>
             </Avatar>
           </Link>
           <div className="flex flex-col min-w-0 justify-center">
             <Link to={`/profile/${user?._id}`} className="cursor-pointer flex items-baseline gap-1.5 truncate">
-              <span className="font-bold text-slate-900 text-sm sm:text-base truncate tracking-tight">{displayName}</span>
-              {showDistinctHandle && (
-                <span className="text-xs font-semibold text-indigo-600 truncate">
-                  {cleanHandle}
-                </span>
-              )}
+              <span className="font-bold text-slate-900 text-sm sm:text-base truncate tracking-tight">{cleanHandle}</span>
             </Link>
             <div className="flex items-center gap-2 mt-0.5">
               <span
