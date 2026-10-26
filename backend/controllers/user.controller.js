@@ -1164,19 +1164,20 @@ export const searchUsers = async (req, res) => {
             });
         }
 
-        const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const trimmedQuery = query.startsWith('@') ? query.slice(1).trim() : query;
+        const safeQuery = trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(safeQuery, 'i');
+        const fullRegex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 
         const users = await User.find({
             _id: { $ne: currentUserId },
             $or: [
+                { name: fullRegex },
                 { name: regex },
-                { username: regex },
-                { targetRole: regex },
-                { skills: regex }
+                { username: regex }
             ]
         })
-            .select("name username profilepicture bio targetRole skills")
+            .select("name username profilepicture")
             .limit(10);
 
         return res.status(200).json({

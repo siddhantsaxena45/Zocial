@@ -36,13 +36,13 @@ const SearchDialog = ({ open, setOpen }) => {
         }
       } catch (err) {
         console.error("Search error:", err);
-        // Fallback to local filter
+        // Fallback to local filter: only search on basis of name and username
         const q = searchQuery.toLowerCase();
+        const cleanQ = q.startsWith('@') ? q.slice(1) : q;
         const localHits = (suggestedUsers || []).filter(u => 
           u.name?.toLowerCase().includes(q) ||
-          u.username?.toLowerCase().includes(q) ||
-          u.targetRole?.toLowerCase().includes(q) ||
-          u.skills?.some(s => s.toLowerCase().includes(q))
+          u.username?.toLowerCase().includes(cleanQ) ||
+          u.username?.toLowerCase().includes(q)
         );
         setSearchResults(localHits);
       } finally {
@@ -70,7 +70,7 @@ const SearchDialog = ({ open, setOpen }) => {
                 Network Search
               </h2>
               <p className="text-[11px] text-slate-400 font-medium">
-                Find builders, engineers, and collaborators across Zocial
+                Find people and collaborators across Zocial
               </p>
             </div>
           </div>
@@ -89,7 +89,7 @@ const SearchDialog = ({ open, setOpen }) => {
             <Search className="absolute left-3.5 h-4 w-4 text-purple-500 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search by username, role, or skill (e.g. Python, React)..."
+              placeholder="Search by name or @username..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-purple-400 rounded-2xl py-3 pl-10 pr-10 text-xs sm:text-sm font-medium text-slate-900 outline-none transition-all shadow-inner placeholder:text-slate-400"
