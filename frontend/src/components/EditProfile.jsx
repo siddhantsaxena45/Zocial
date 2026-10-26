@@ -27,6 +27,8 @@ const EditProfile = () => {
     const navigate = useNavigate();
     
     const [inputData, setInputData] = useState({
+        name: user?.name || "",
+        username: user?.username || "",
         profilephoto: user?.profilepicture || "",
         bio: user?.bio || "",
         gender: user?.gender || "",
@@ -43,6 +45,8 @@ const EditProfile = () => {
     useEffect(() => {
         if (user) {
             setInputData({
+                name: user.name || "",
+                username: user.username || "",
                 profilephoto: user.profilepicture,
                 bio: user.bio || "",
                 gender: user.gender || "",
@@ -77,6 +81,8 @@ const EditProfile = () => {
         if (inputData.profilephoto instanceof File) {
             formData.append("profilephoto", inputData.profilephoto);
         }
+        formData.append("name", inputData.name);
+        formData.append("username", inputData.username);
         formData.append("bio", inputData.bio);
         formData.append("gender", inputData.gender);
         formData.append("openToOpportunities", inputData.openToOpportunities ? "true" : "false");
@@ -94,6 +100,8 @@ const EditProfile = () => {
             if (response.data.success) {
                 const updatedUser = {
                     ...user,
+                    name: response.data.user.name,
+                    username: response.data.user.username,
                     profilepicture: response.data.user.profilepicture,
                     bio: response.data.user.bio,
                     gender: response.data.user.gender,
@@ -150,9 +158,9 @@ const EditProfile = () => {
                                 </div>
                                 
                                 <div>
-                                    <h2 className="font-black text-lg text-slate-900 tracking-tight">{user?.username}</h2>
+                                    <h2 className="font-black text-lg text-slate-900 tracking-tight">{inputData.name || user?.name || user?.username}</h2>
                                     <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-1">
-                                        Verified Member
+                                        {inputData.username ? (inputData.username.startsWith('@') ? inputData.username : `@${inputData.username}`) : (user?.username?.startsWith('@') ? user?.username : `@${user?.username}`)}
                                     </p>
                                 </div>
 
@@ -169,6 +177,46 @@ const EditProfile = () => {
 
                     {/* Right Column: Edit Form */}
                     <div className="lg:col-span-2 space-y-6">
+                        
+                        {/* Identity Section */}
+                        <div className="glass-card p-8 border border-white/60 shadow-xl space-y-6">
+                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                                    <User className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-slate-900 text-sm uppercase tracking-wider">Identity Details</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Name & Unique @Handle</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Full Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Swati Saxena"
+                                        value={inputData.name}
+                                        onChange={(e) => setInputData({ ...inputData, name: e.target.value })}
+                                        className="w-full bg-slate-50/50 border border-slate-200/60 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Unique Handle (@username)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="@swatisaxena"
+                                        value={inputData.username}
+                                        onChange={(e) => {
+                                            let val = e.target.value.toLowerCase().replace(/[^a-z0-9_@]/g, "");
+                                            if (val && !val.startsWith("@")) val = `@${val.replace(/@/g, "")}`;
+                                            setInputData({ ...inputData, username: val });
+                                        }}
+                                        className="w-full bg-slate-50/50 border border-slate-200/60 rounded-xl px-4 py-2.5 text-sm font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         
                         {/* Bio Section */}
                         <div className="glass-card p-8 border border-white/60 shadow-xl space-y-6">

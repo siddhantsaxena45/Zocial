@@ -10,6 +10,7 @@ import { clearMessages } from '@/redux/messageNotificationSlice'
 
 const Signup = () => {
     const [input, setInput] = useState({
+        name: "",
         username: "",
         email: "",
         password: "",
@@ -24,6 +25,30 @@ const Signup = () => {
             navigate("/")
         }
     }, [user, navigate])
+
+    const handleNameChange = (e) => {
+        const newName = e.target.value;
+        const autoClean = newName.toLowerCase().replace(/[^a-z0-9_]/g, "");
+        const prevClean = (input.name || "").toLowerCase().replace(/[^a-z0-9_]/g, "");
+        
+        // Auto-generate username from name if username is empty or matches prior auto-handle
+        const shouldAutoUpdate = !input.username || input.username === `@${prevClean}`;
+        
+        setInput(prev => ({
+            ...prev,
+            name: newName,
+            username: shouldAutoUpdate ? (autoClean ? `@${autoClean}` : "") : prev.username
+        }));
+    };
+
+    const handleUsernameChange = (e) => {
+        let val = e.target.value.trim().toLowerCase();
+        if (val && !val.startsWith("@")) {
+            val = `@${val.replace(/@/g, "")}`;
+        }
+        val = val.replace(/[^a-z0-9_@]/g, "");
+        setInput(prev => ({ ...prev, username: val }));
+    };
 
     const handleChange = (e) => {
         setInput({
@@ -45,7 +70,7 @@ const Signup = () => {
                 dispatch(clearNotifications());
                 dispatch(clearMessages());
                 navigate("/login")
-                setInput({ username: "", email: "", password: "" })
+                setInput({ name: "", username: "", email: "", password: "" })
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Registration failed")
@@ -89,16 +114,34 @@ const Signup = () => {
 
                         <div className="space-y-4">
                             <div className="group">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 px-1 group-focus-within:text-indigo-600 transition-colors">Professional Alias</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 px-1 group-focus-within:text-indigo-600 transition-colors">Full Name</label>
                                 <input
-                                    onChange={handleChange}
-                                    name="username"
+                                    onChange={handleNameChange}
+                                    name="name"
                                     type="text"
-                                    value={input.username}
+                                    value={input.name}
                                     required
-                                    placeholder="johndoe_pro"
+                                    placeholder="e.g. Swati Saxena"
                                     className="w-full bg-slate-50/50 border-2 border-slate-100/50 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-500/5"
                                 />
+                            </div>
+
+                            <div className="group">
+                                <div className="flex justify-between items-center mb-2 px-1">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 group-focus-within:text-indigo-600 transition-colors">Unique Handle (@username)</label>
+                                    <span className="text-[9px] text-indigo-500 font-bold">Auto-generated</span>
+                                </div>
+                                <div className="relative flex items-center">
+                                    <input
+                                        onChange={handleUsernameChange}
+                                        name="username"
+                                        type="text"
+                                        value={input.username}
+                                        required
+                                        placeholder="@swatisaxena"
+                                        className="w-full bg-slate-50/50 border-2 border-slate-100/50 rounded-xl px-4 py-3 text-sm font-bold text-indigo-900 outline-none transition-all focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-500/5"
+                                    />
+                                </div>
                             </div>
 
                             <div className="group">

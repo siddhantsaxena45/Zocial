@@ -90,14 +90,14 @@ const Login = () => {
 
                         <div className="space-y-4">
                             <div className="group">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 px-1 group-focus-within:text-indigo-600 transition-colors">Credential Email</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 px-1 group-focus-within:text-indigo-600 transition-colors">Email or @Username</label>
                                 <input
                                     onChange={handleChange}
                                     name="email"
-                                    type="email"
+                                    type="text"
                                     value={input.email}
                                     required
-                                    placeholder="name@company.com"
+                                    placeholder="name@company.com or @handle"
                                     className="w-full bg-slate-50/50 border-2 border-slate-100/50 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-500/5"
                                 />
                             </div>

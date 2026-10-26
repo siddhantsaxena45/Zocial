@@ -31,7 +31,10 @@ const SuggestedUsers = () => {
                                 </Link>
                                 <div className='flex flex-col justify-center items-start min-w-0'>
                                     <span className="font-bold text-[13px] text-slate-900 truncate group-hover:text-indigo-600 transition-colors tracking-tight">
-                                        <Link to={`/profile/${user?._id}`}>{user?.username}</Link>
+                                        <Link to={`/profile/${user?._id}`}>{user?.name || user?.username}</Link>
+                                    </span>
+                                    <span className="text-[10px] text-indigo-600 font-semibold truncate w-full">
+                                        {user?.username?.startsWith('@') ? user?.username : `@${user?.username}`}
                                     </span>
                                     <span className="text-[10px] text-slate-500 font-medium truncate w-full italic">
                                         {user?.bio || "Professional Hub"}

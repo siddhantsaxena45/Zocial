@@ -176,9 +176,14 @@ const SynergyRequests = ({ open, setOpen }) => {
                                         <Link 
                                             to={`/profile/${request.sender?._id}`} 
                                             onClick={() => setOpen(false)}
-                                            className="text-xs font-black text-slate-900 hover:text-indigo-600 transition-colors truncate block"
+                                            className="hover:text-indigo-600 transition-colors truncate block"
                                         >
-                                            @{request.sender?.username}
+                                            <span className="text-xs font-black text-slate-900 block truncate">
+                                                {request.sender?.name || request.sender?.username}
+                                            </span>
+                                            <span className="text-[10px] text-indigo-600 font-semibold block truncate">
+                                                {request.sender?.username?.startsWith('@') ? request.sender?.username : `@${request.sender?.username}`}
+                                            </span>
                                         </Link>
                                         <p className="text-[10px] text-slate-500 font-medium truncate">
                                             {request.sender?.targetRole || request.sender?.bio || "Builder"}
@@ -236,9 +241,14 @@ const SynergyRequests = ({ open, setOpen }) => {
                                             <Link 
                                                 to={`/profile/${request.receiver?._id}`} 
                                                 onClick={() => setOpen(false)}
-                                                className="text-xs font-black text-slate-900 hover:text-indigo-600 transition-colors truncate block"
+                                                className="hover:text-indigo-600 transition-colors truncate block"
                                             >
-                                                @{request.receiver?.username}
+                                                <span className="text-xs font-black text-slate-900 block truncate">
+                                                    {request.receiver?.name || request.receiver?.username}
+                                                </span>
+                                                <span className="text-[10px] text-indigo-600 font-semibold block truncate">
+                                                    {request.receiver?.username?.startsWith('@') ? request.receiver?.username : `@${request.receiver?.username}`}
+                                                </span>
                                             </Link>
                                             <span className="text-[9px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-md">
                                                 Pending

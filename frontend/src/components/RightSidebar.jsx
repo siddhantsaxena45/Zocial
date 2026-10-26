@@ -27,9 +27,12 @@ const RightSidebar = () => {
         </Link>
         <div className="flex flex-col justify-center items-start min-w-0">
           <span className="font-black text-slate-900 text-sm truncate hover:text-indigo-600 transition-colors">
-            <Link to={`/profile/${user?._id}`}>{user?.username}</Link>
+            <Link to={`/profile/${user?._id}`}>{user?.name || user?.username}</Link>
           </span>
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate max-w-[150px]">
+          <span className="text-[10px] text-indigo-600 font-semibold truncate max-w-[150px]">
+            {user?.username?.startsWith('@') ? user?.username : `@${user?.username}`}
+          </span>
+          <span className="text-[10px] text-slate-500 font-medium uppercase tracking-widest truncate max-w-[150px] mt-0.5">
             {user?.bio || "Professional Hub"}
           </span>
         </div>

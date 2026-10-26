@@ -81,13 +81,14 @@ const ZocialScout = () => {
     localStorage.setItem("zocial_chat_target", JSON.stringify(candidate));
     dispatch(setSelectedUser(candidate));
     
+    const handleClean = candidate.username?.replace(/^@/, '') || "builder";
     const draft = candidate.matchScore
-      ? `Hi @${candidate.username}, I reviewed your proof-of-work on Scout. Your profile matched ${candidate.matchScore}% with our target requirements and we'd love to connect!`
-      : `Hi @${candidate.username}, I reviewed your verified transmissions on Scout and would love to collaborate!`;
+      ? `Hi @${handleClean}, I reviewed your proof-of-work on Scout. Your profile matched ${candidate.matchScore}% with our target requirements and we'd love to connect!`
+      : `Hi @${handleClean}, I reviewed your verified transmissions on Scout and would love to collaborate!`;
 
     localStorage.setItem("zocial_chat_draft", draft);
     navigate("/chat");
-    toast.success(`Opening direct collaboration with @${candidate.username}`);
+    toast.success(`Opening direct collaboration with @${handleClean}`);
   };
 
   const isFilterActive = Boolean(jobDescription.trim());
@@ -271,10 +272,13 @@ const ZocialScout = () => {
                       </Link>
                       <div>
                         <div className="flex items-center gap-2">
-                          <Link to={`/profile/${candidate._id}`}>
+                          <Link to={`/profile/${candidate._id}`} className="flex flex-col">
                             <h3 className="text-base font-black text-slate-900 hover:text-indigo-600 transition-colors">
-                              @{candidate.username}
+                              {candidate.name || candidate.username}
                             </h3>
+                            <span className="text-[11px] font-semibold text-slate-400">
+                              {candidate.username?.startsWith('@') ? candidate.username : `@${candidate.username}`}
+                            </span>
                           </Link>
                           {candidate.openToOpportunities && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 font-bold text-[9px] uppercase tracking-wider">

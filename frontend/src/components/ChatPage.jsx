@@ -143,8 +143,10 @@ const ChatPage = () => {
                     {isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-bold text-slate-900 truncate">{u.username}</span>
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">Verified Link</span>
+                    <span className="text-sm font-bold text-slate-900 truncate">{u.name || u.username}</span>
+                    <span className="text-[10px] font-medium text-slate-400 truncate">
+                      {u.username?.startsWith('@') ? u.username : `@${u.username}`}
+                    </span>
                   </div>
                   <div className="ml-auto flex flex-col items-end gap-1">
                     {unseenCounts[u._id] > 0 && (

@@ -266,17 +266,13 @@ const Profile = () => {
                         <div className="flex flex-col gap-6 flex-1 text-center md:text-left">
                             <div className="space-y-2">
                                 <div className="flex flex-col md:flex-row items-center gap-4">
-                                    <div className="flex items-center gap-3">
-                                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">{userProfile?.username}</h1>
-                                        {userProfile?.openToOpportunities && (
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 font-bold text-[10px] tracking-wider uppercase shadow-sm">
-                                                <span className="relative flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                                </span>
-                                                Open to Gigs
-                                            </div>
-                                        )}
+                                    <div className="flex flex-col md:flex-row md:items-baseline gap-2">
+                                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">
+                                            {userProfile?.name || userProfile?.username}
+                                        </h1>
+                                        <span className="text-base font-bold text-indigo-600">
+                                            {userProfile?.username?.startsWith('@') ? userProfile?.username : `@${userProfile?.username}`}
+                                        </span>
                                     </div>
                                     <div className="flex gap-2">
                                         {!isloggedIn ? (

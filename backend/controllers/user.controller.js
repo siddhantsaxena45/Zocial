@@ -14,30 +14,81 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 import { generateJsonWithGemini } from "../utils/geminiRotator.js";
 
+/**
+ * Generates a guaranteed unique handle starting with '@'
+ * derived from name or email address.
+ */
+export const generateUniqueUsername = async (baseName, email = "") => {
+    let cleanHandle = "";
+    if (email && email.includes("@")) {
+        cleanHandle = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "");
+    }
+    if (!cleanHandle && baseName) {
+        cleanHandle = baseName.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    }
+    if (!cleanHandle) {
+        cleanHandle = "builder" + Math.floor(100 + Math.random() * 900);
+    }
+
+    let candidate = `@${cleanHandle}`;
+
+    let existing = await User.findOne({ username: candidate });
+    if (!existing) {
+        return candidate;
+    }
+
+    let attempts = 0;
+    while (existing && attempts < 25) {
+        attempts++;
+        const suffix = Math.floor(10 + Math.random() * 990);
+        candidate = `@${cleanHandle}${suffix}`;
+        existing = await User.findOne({ username: candidate });
+    }
+
+    if (existing) {
+        candidate = `@${cleanHandle}${Date.now().toString().slice(-4)}`;
+    }
+
+    return candidate;
+};
+
 export const register = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
-        if (!username || !email || !password) {
-            return res.status(400).json({ message: "All fields are required", success: false });
+        const { name, username, email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required", success: false });
         }
-        if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+        if (typeof email !== 'string' || typeof password !== 'string') {
             return res.status(400).json({ message: "Invalid payload format", success: false });
         }
         if (password.length < 6) {
             return res.status(400).json({ message: "Password must be at least 6 characters", success: false });
         }
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ message: "User already exists", success: false })
+        let existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "An account with this email already exists", success: false });
         }
-        let user2 = await User.findOne({ username });
-        if (user2) {
-            return res.status(400).json({ message: "Username already exists", success: false })
+
+        const displayName = (name && typeof name === 'string' && name.trim()) ? name.trim() : (username || email.split("@")[0]);
+        let chosenUsername = (username && typeof username === 'string' && username.trim()) ? username.trim() : "";
+
+        if (chosenUsername) {
+            if (!chosenUsername.startsWith("@")) {
+                chosenUsername = `@${chosenUsername.toLowerCase().replace(/[^a-z0-9_]/g, "")}`;
+            }
+            const userWithUsername = await User.findOne({ username: chosenUsername });
+            if (userWithUsername) {
+                return res.status(400).json({ message: `Username ${chosenUsername} is already taken`, success: false });
+            }
+        } else {
+            chosenUsername = await generateUniqueUsername(displayName, email);
         }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        user = await User.create({
-            username,
+        const user = await User.create({
+            name: displayName,
+            username: chosenUsername,
             email,
             password: hashedPassword,
         });
@@ -47,7 +98,11 @@ export const register = async (req, res) => {
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             secure: process.env.NODE_ENV === "production",
             maxAge: 3650 * 24 * 60 * 60 * 1000
-        }).status(200).json({ message: "User created successfully", success: true, user: { _id: user._id, username: user.username, email: user.email } });
+        }).status(200).json({
+            message: "User created successfully",
+            success: true,
+            user: { _id: user._id, name: user.name, username: user.username, email: user.email }
+        });
     }
     catch (error) {
         console.error("[Registration Error]", error);
@@ -64,7 +119,14 @@ export const login = async (req, res) => {
         if (typeof email !== 'string' || typeof password !== 'string') {
             return res.status(400).json({ message: "Invalid payload format", success: false });
         }
-        let user = await User.findOne({ email });
+        const cleanLookup = email.trim();
+        let user = await User.findOne({
+            $or: [
+                { email: cleanLookup },
+                { username: cleanLookup },
+                { username: cleanLookup.startsWith("@") ? cleanLookup : `@${cleanLookup}` }
+            ]
+        });
         if (!user) {
             return res.status(400).json({ message: "User does not exist", success: false })
         }
@@ -72,6 +134,21 @@ export const login = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid credentials", success: false })
         }
+
+        // Auto-heal legacy accounts missing '@' or name
+        let needsSave = false;
+        if (!user.name) {
+            user.name = user.username.replace(/^@/, '') || "Verified Builder";
+            needsSave = true;
+        }
+        if (!user.username || !user.username.startsWith("@") || user.username.includes(" ")) {
+            user.username = await generateUniqueUsername(user.name, user.email);
+            needsSave = true;
+        }
+        if (needsSave) {
+            await user.save();
+        }
+
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "3650d" });
         const populatedPost = await Promise.all(user.posts.map(async (postId) => {
             const post = await Post.findById(postId);
@@ -83,6 +160,7 @@ export const login = async (req, res) => {
         }));
         user = {
             _id: user._id,
+            name: user.name || user.username,
             username: user.username,
             email: user.email,
             profilepicture: user.profilepicture,
@@ -160,6 +238,8 @@ export const editProfile = async (req, res) => {
     try {
         const userId = req.id;
         const {
+            name,
+            username,
             bio,
             gender,
             openToOpportunities,
@@ -180,6 +260,19 @@ export const editProfile = async (req, res) => {
         const user = await User.findById(userId).select("-password");
         if (!user) {
             return res.status(404).json({ message: "User not found", success: false });
+        }
+        if (name !== undefined) user.name = String(name).trim().substring(0, 100);
+        if (username !== undefined && String(username).trim()) {
+            let clean = String(username).trim();
+            if (!clean.startsWith("@")) clean = `@${clean}`;
+            clean = `@${clean.substring(1).toLowerCase().replace(/[^a-z0-9_]/g, "")}`;
+            if (clean !== user.username) {
+                const existing = await User.findOne({ username: clean, _id: { $ne: userId } });
+                if (existing) {
+                    return res.status(400).json({ message: `Username ${clean} is already taken`, success: false });
+                }
+                user.username = clean;
+            }
         }
         if (bio !== undefined) user.bio = String(bio).substring(0, 1000);
         if (gender !== undefined) user.gender = String(gender).substring(0, 50);
@@ -411,47 +504,63 @@ export const googleLogin = async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
 
-
         const { email, name, picture } = ticket.getPayload();
 
         // 2. Find or create user
         let user = await User.findOne({ email });
         if (!user) {
+            const uniqueUsername = await generateUniqueUsername(name, email);
             user = await User.create({
-                username: name,
+                name: name || (email ? email.split("@")[0] : "Verified Builder"),
+                username: uniqueUsername,
                 email,
-                profilepicture: picture,
+                profilepicture: picture || "",
                 password: "GOOGLE_AUTH",
             });
         } else {
-            // Update profile picture if user exists to ensure sync
-            user.profilepicture = picture;
-            await user.save();
+            let needsSave = false;
+            if (picture && user.profilepicture !== picture) {
+                user.profilepicture = picture;
+                needsSave = true;
+            }
+            if (!user.name && name) {
+                user.name = name;
+                needsSave = true;
+            }
+            // Auto-heal legacy Google users whose username doesn't start with '@' or has spaces
+            if (!user.username || !user.username.startsWith("@") || user.username.includes(" ")) {
+                user.username = await generateUniqueUsername(user.name || name, user.email || email);
+                needsSave = true;
+            }
+            if (needsSave) {
+                await user.save();
+            }
         }
 
         const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
             expiresIn: "3650d",
         });
 
-        const populatedPost = await Promise.all(user.posts.map(async (postId) => {
+        const populatedPost = await Promise.all((user.posts || []).map(async (postId) => {
             const post = await Post.findById(postId);
             return post?.author.equals(user._id) ? post : null;
         }));
 
-        user = {
+        const safeUser = {
             _id: user._id,
+            name: user.name || name || user.username,
             username: user.username,
             email: user.email,
             profilepicture: user.profilepicture,
             bio: user.bio,
             followers: [...new Set((user.followers || []).map(id => id.toString()))],
             following: [...new Set((user.following || []).map(id => id.toString()))],
-            posts: populatedPost,
+            posts: populatedPost.filter(Boolean),
             bookmarks: user.bookmarks,
         };
 
         // 4. Send cookie (10 years / lifetime browser persistence)
-        res.cookie("token", jwtToken, {
+        return res.cookie("token", jwtToken, {
             httpOnly: true,
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             secure: process.env.NODE_ENV === "production",
@@ -459,15 +568,14 @@ export const googleLogin = async (req, res) => {
         })
             .status(200)
             .json({
-                message: `${user.username} logged in with Google`,
+                message: `${safeUser.name || safeUser.username} logged in with Google`,
                 success: true,
-                user,
+                user: safeUser,
             });
     } catch (error) {
         console.error("Google login error Details:", error.message);
-        res.status(401).json({ message: "Google login failed: " + error.message, success: false });
+        return res.status(401).json({ message: "Google login failed: " + error.message, success: false });
     }
-
 };
 
 export const forgotPassword = async (req, res) => {
@@ -794,9 +902,22 @@ export const removeSynergy = async (req, res) => {
 export const getMe = async (req, res) => {
     try {
         const userId = req.id;
-        const user = await User.findById(userId).select("-password").populate('followers following');
+        let user = await User.findById(userId).select("-password").populate('followers following');
         if (!user) {
             return res.status(404).json({ message: "User not found", success: false });
+        }
+
+        let needsSave = false;
+        if (!user.name) {
+            user.name = user.username ? user.username.replace(/^@/, '') : (user.email ? user.email.split("@")[0] : "Verified Builder");
+            needsSave = true;
+        }
+        if (!user.username || !user.username.startsWith("@") || user.username.includes(" ")) {
+            user.username = await generateUniqueUsername(user.name, user.email);
+            needsSave = true;
+        }
+        if (needsSave) {
+            await user.save();
         }
 
         const userObj = user.toObject();
@@ -987,6 +1108,7 @@ Return strict valid JSON with an array named "results":
 
             return {
                 _id: candidate._id,
+                name: candidate.name || candidate.username,
                 username: candidate.username,
                 profilepicture: candidate.profilepicture,
                 bio: candidate.bio,
@@ -1034,7 +1156,7 @@ export const searchUsers = async (req, res) => {
         if (!query) {
             const currentUser = await User.findById(currentUserId).populate({
                 path: "following",
-                select: "username profilepicture bio targetRole skills"
+                select: "name username profilepicture bio targetRole skills"
             });
             return res.status(200).json({
                 success: true,
@@ -1048,12 +1170,13 @@ export const searchUsers = async (req, res) => {
         const users = await User.find({
             _id: { $ne: currentUserId },
             $or: [
+                { name: regex },
                 { username: regex },
                 { targetRole: regex },
                 { skills: regex }
             ]
         })
-            .select("username profilepicture bio targetRole skills")
+            .select("name username profilepicture bio targetRole skills")
             .limit(10);
 
         return res.status(200).json({

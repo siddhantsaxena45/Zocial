@@ -151,9 +151,12 @@ const ChatUser = ({ user, isOnline, onBack }) => {
               <AvatarFallback>{user?.username?.[0] || "U"}</AvatarFallback>
             </Avatar>
           </Link>
-        <div className="flex flex-col">
-            <Link to={`/profile/${user?._id}`} className="cursor-pointer">
-              <span className="font-semibold">{user?.username || "Unknown"}</span>
+          <div className="flex flex-col">
+            <Link to={`/profile/${user?._id}`} className="cursor-pointer flex items-baseline gap-1.5">
+              <span className="font-bold text-slate-900">{user?.name || user?.username || "Unknown"}</span>
+              <span className="text-xs font-medium text-slate-400">
+                {user?.username?.startsWith('@') ? user?.username : `@${user?.username}`}
+              </span>
             </Link>
             <div className="flex items-center gap-2">
                 <span
@@ -247,7 +250,7 @@ const ChatUser = ({ user, isOnline, onBack }) => {
                     className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-[11px] rounded-lg shadow-sm active:scale-95 transition-all flex items-center gap-1.5"
                   >
                     <Users className="w-3.5 h-3.5" />
-                    {connecting ? "Sending..." : `Connect with @${user?.username}`}
+                    {connecting ? "Sending..." : `Connect with @${user?.username?.replace(/^@/, '')}`}
                   </button>
                 )}
                 <Link
@@ -294,7 +297,7 @@ const ChatUser = ({ user, isOnline, onBack }) => {
                 disabled={isLimitReached}
                 placeholder={
                   isLimitReached 
-                    ? `Waiting for @${user?.username} to reply or connect...`
+                    ? `Waiting for @${user?.username?.replace(/^@/, '')} to reply or connect...`
                     : "Type a professional message..."
                 }
                 className={`w-full px-4 sm:px-5 py-3 rounded-2xl outline-none text-sm transition-all font-medium ${

@@ -39,6 +39,7 @@ const SearchDialog = ({ open, setOpen }) => {
         // Fallback to local filter
         const q = searchQuery.toLowerCase();
         const localHits = (suggestedUsers || []).filter(u => 
+          u.name?.toLowerCase().includes(q) ||
           u.username?.toLowerCase().includes(q) ||
           u.targetRole?.toLowerCase().includes(q) ||
           u.skills?.some(s => s.toLowerCase().includes(q))
@@ -127,7 +128,10 @@ const SearchDialog = ({ open, setOpen }) => {
                 <div className="flex flex-col flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-purple-700 transition-colors truncate">
-                      @{u.username}
+                      {u.name || u.username}
+                    </span>
+                    <span className="text-[10px] font-semibold text-purple-600 truncate">
+                      {u.username?.startsWith('@') ? u.username : `@${u.username}`}
                     </span>
                     {u.targetRole && (
                       <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-2 py-0.2 rounded-md truncate max-w-[150px]">
